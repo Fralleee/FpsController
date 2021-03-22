@@ -70,6 +70,7 @@ namespace Fralle.FpsController
 		Vector3 crouchingScale;
 		Vector3 defaultScale;
 		Vector2 affectRotation = Vector2.zero;
+		Vector2 mouseCoords;
 		bool previouslyGrounded;
 		bool queueJump;
 		bool jumpButton;
@@ -154,7 +155,7 @@ namespace Fralle.FpsController
 
 		public void OnLook(InputAction.CallbackContext context)
 		{
-			mouseLook += context.ReadValue<Vector2>();
+			mouseLook = context.ReadValue<Vector2>();
 		}
 
 		public void OnJumpCancel(InputAction.CallbackContext context)
@@ -179,11 +180,11 @@ namespace Fralle.FpsController
 		#region Camera Control
 		void CameraLook()
 		{
-			var mouseY = Mathf.Clamp(mouseLook.y, -clampY, clampY) * mouseSensitivity;
-			var mouseX = mouseLook.x * mouseSensitivity;
+			mouseCoords.y += Mathf.Clamp(mouseLook.y, -clampY, clampY) * mouseSensitivity;
+			mouseCoords.x += mouseLook.x * mouseSensitivity;
 
-			currentRotationX = Mathf.SmoothDamp(currentRotationX, mouseX + affectRotation.x, ref mouseLookDampX, smoothTime);
-			currentRotationY = Mathf.SmoothDamp(currentRotationY, mouseY + affectRotation.y, ref mouseLookDampY, smoothTime);
+			currentRotationX = Mathf.SmoothDamp(currentRotationX, mouseCoords.x + affectRotation.x, ref mouseLookDampX, smoothTime);
+			currentRotationY = Mathf.SmoothDamp(currentRotationY, mouseCoords.y + affectRotation.y, ref mouseLookDampY, smoothTime);
 
 			affectRotation = Vector2.SmoothDamp(affectRotation, Vector2.zero, ref affectRotation, 0);
 
