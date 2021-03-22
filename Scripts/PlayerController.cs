@@ -61,6 +61,7 @@ namespace Fralle.FpsController
 
 		readonly List<ContactPoint> allCPs = new List<ContactPoint>();
 		public Vector2 movement { get; private set; }
+		public Vector2 mouseLook { get; private set; }
 		PlayerInput playerInput;
 		Vector3 lastVelocity;
 		Vector3 desiredForce;
@@ -69,7 +70,6 @@ namespace Fralle.FpsController
 		Vector3 crouchingScale;
 		Vector3 defaultScale;
 		Vector2 affectRotation = Vector2.zero;
-		Vector2 mouseLook;
 		bool previouslyGrounded;
 		bool queueJump;
 		bool jumpButton;
