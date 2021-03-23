@@ -22,7 +22,6 @@ namespace Fralle.FpsController
 		[HideInInspector] public CapsuleCollider capsule;
 
 		[Header("Flags")]
-		public bool IsLocked;
 		public bool IsGrounded;
 		public bool IsMoving;
 		public bool IsJumping;
@@ -118,9 +117,6 @@ namespace Fralle.FpsController
 
 		void FixedUpdate()
 		{
-			if (IsLocked)
-				return;
-
 			desiredForce = orientation.right * movement.x + orientation.forward * movement.y;
 			GroundedCheck();
 
@@ -148,6 +144,19 @@ namespace Fralle.FpsController
 		}
 
 		#region Input
+		public void Lock(bool doLock = true)
+		{
+			if (doLock)
+			{
+				playerInput.DeactivateInput();
+				mouseLook = Vector2.zero;
+				movement = Vector2.zero;
+			}
+			else
+			{
+				playerInput.ActivateInput();
+			}
+		}
 		public void OnMovement(InputAction.CallbackContext context)
 		{
 			movement = context.ReadValue<Vector2>();
