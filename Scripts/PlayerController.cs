@@ -117,6 +117,12 @@ namespace Fralle.FpsController
 
 		void FixedUpdate()
 		{
+			if (!playerInput.inputIsActive)
+			{
+				mouseLook = Vector2.zero;
+				movement = Vector2.zero;
+			}
+
 			desiredForce = orientation.right * movement.x + orientation.forward * movement.y;
 			GroundedCheck();
 
@@ -144,19 +150,6 @@ namespace Fralle.FpsController
 		}
 
 		#region Input
-		public void Lock(bool doLock = true)
-		{
-			if (doLock)
-			{
-				playerInput.DeactivateInput();
-				mouseLook = Vector2.zero;
-				movement = Vector2.zero;
-			}
-			else
-			{
-				playerInput.ActivateInput();
-			}
-		}
 		public void OnMovement(InputAction.CallbackContext context)
 		{
 			movement = context.ReadValue<Vector2>();
