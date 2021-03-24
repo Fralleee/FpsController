@@ -22,6 +22,7 @@ namespace Fralle.FpsController
 		[HideInInspector] public CapsuleCollider capsule;
 
 		[Header("Flags")]
+		public bool IsLocked;
 		public bool IsGrounded;
 		public bool IsMoving;
 		public bool IsJumping;
@@ -109,6 +110,9 @@ namespace Fralle.FpsController
 
 		void Update()
 		{
+			if (IsLocked)
+				return;
+
 			if (IsGrounded && jumpButton)
 			{
 				queueJump = true;
@@ -121,7 +125,12 @@ namespace Fralle.FpsController
 			{
 				mouseLook = Vector2.zero;
 				movement = Vector2.zero;
+				jumpButton = false;
+				crouchButton = false;
 			}
+
+			if (IsLocked)
+				return;
 
 			desiredForce = orientation.right * movement.x + orientation.forward * movement.y;
 			GroundedCheck();
