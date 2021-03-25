@@ -9,7 +9,6 @@ namespace Fralle.FpsController
 {
 	public class PlayerController : MonoBehaviour
 	{
-
 		public event Action<float> OnGroundEnter = delegate { };
 		public event Action OnGroundLeave = delegate { };
 		public event Action<bool> OnCrouchStateChanged = delegate { };
@@ -81,6 +80,7 @@ namespace Fralle.FpsController
 		float mouseLookDampX;
 		float mouseLookDampY;
 		float roofCheckHeight;
+		readonly float slopeGlideMax = 150f;
 
 		void Awake()
 		{
@@ -258,11 +258,12 @@ namespace Fralle.FpsController
 			var slopeAngle = Vector3.Angle(groundContactNormal, Vector3.up);
 			if (slopeAngle > maxWalkableSlopeAngle + 1)
 			{
-				var direction = Vector3.ProjectOnPlane(Vector3.down, groundContactNormal);
-				rigidBody.AddForce(direction * 240f, ForceMode.Acceleration);
+				rigidBody.AddForce(Vector3.down * slopeGlideMax, ForceMode.Acceleration);
 			}
 			if (slopeAngle > maxSlopeGlideAngle + 1f)
 			{
+				var factor = maxSlopeGlideAngle / maxWalkableSlopeAngle;
+				rigidBody.AddForce(Vector3.down * slopeGlideMax * factor, ForceMode.Acceleration);
 				return;
 			}
 
