@@ -22,11 +22,11 @@ namespace Fralle.FpsController
 		[HideInInspector] public CapsuleCollider capsule;
 
 		[Header("Flags")]
-		public bool IsLocked;
-		public bool IsGrounded;
-		public bool IsMoving;
-		public bool IsJumping;
-		public bool IsCrouching;
+		[Readonly] public bool IsLocked;
+		[Readonly] public bool IsGrounded;
+		[Readonly] public bool IsMoving;
+		[Readonly] public bool IsJumping;
+		[Readonly] public bool IsCrouching;
 
 		[Header("Mouse look")]
 		[SerializeField] float mouseSensitivity = 3f;
@@ -44,7 +44,7 @@ namespace Fralle.FpsController
 		[SerializeField] float stepSearchOvershoot = 0.01f;
 
 		[Header("Ground Control")]
-		[SerializeField] float maxSlopeAngle = 35;
+		[SerializeField] float maxSlopeGlideAngle = 35;
 		[SerializeField] float maxWalkableSlopeAngle = 45;
 		[SerializeField] float groundCheckDistance = 0.01f; // distance for checking if the controller is grounded (0.01f seems to work best for this)
 		[SerializeField] float stickToGroundHelperDistance = 0.5f; // stops the character
@@ -226,7 +226,7 @@ namespace Fralle.FpsController
 			if (previouslyGrounded)
 				distance += capsule.height * stepHeight;
 
-			if (Physics.SphereCast(body.position, capsule.radius - 0.001f, Vector3.down, out RaycastHit hitInfo, distance, Physics.AllLayers, QueryTriggerInteraction.Ignore))
+			if (Physics.SphereCast(body.position.With(y: body.position.y - 0.001f), capsule.radius - 0.001f, Vector3.down, out RaycastHit hitInfo, distance, Physics.AllLayers, QueryTriggerInteraction.Ignore))
 			{
 				IsGrounded = true;
 				groundContactNormal = hitInfo.normal;
@@ -253,18 +253,20 @@ namespace Fralle.FpsController
 		void SlopeControl()
 		{
 			rigidBody.useGravity = true;
-			if (IsGrounded && rigidBody.velocity.y <= 0.2f)
-			{
-				var slopeAngle = Vector3.Angle(groundContactNormal, Vector3.up);
-				if (slopeAngle > maxWalkableSlopeAngle)
-				{
-					rigidBody.AddForce(Physics.gravity * 3f);
-				}
-				if (slopeAngle > maxSlopeAngle + 1f)
-				{
-					return;
-				}
 
+			var slopeAngle = Vector3.Angle(groundContactNormal, Vector3.up);
+			if (slopeAngle > maxWalkableSlopeAngle + 1)
+			{
+				var direction = Vector3.ProjectOnPlane(Vector3.down, groundContactNormal);
+				rigidBody.AddForce(direction * 240f, ForceMode.Acceleration);
+			}
+			if (slopeAngle > maxSlopeGlideAngle + 1f)
+			{
+				return;
+			}
+
+			if (rigidBody.velocity.y >= -0.2f)
+			{
 				rigidBody.useGravity = false;
 				rigidBody.AddForce(-groundContactNormal * 150f);
 			}
