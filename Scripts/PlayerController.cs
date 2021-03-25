@@ -81,6 +81,8 @@ namespace Fralle.FpsController
 		float mouseLookDampY;
 		float roofCheckHeight;
 		readonly float slopeGlideMax = 150f;
+		[Readonly] public float slopeAngle;
+		float actualGroundCheckDistance => (capsule.height / 2f) - capsule.radius + groundCheckDistance;
 
 		void Awake()
 		{
@@ -223,14 +225,14 @@ namespace Fralle.FpsController
 		void GroundedCheck()
 		{
 			previouslyGrounded = IsGrounded;
-			var distance = ((capsule.height / 2f) - capsule.radius) + groundCheckDistance;
-			if (previouslyGrounded)
-				distance += capsule.height * stepHeight;
-
-			if (Physics.SphereCast(body.position.With(y: body.position.y - 0.001f), capsule.radius - 0.001f, Vector3.down, out RaycastHit hitInfo, distance, Physics.AllLayers, QueryTriggerInteraction.Ignore))
+			if (Physics.SphereCast(body.position, capsule.radius - 0.001f, Vector3.down, out RaycastHit hitInfo, actualGroundCheckDistance, Physics.AllLayers, QueryTriggerInteraction.Ignore))
 			{
+				if (Physics.Raycast(body.position, Vector3.down, out RaycastHit raycastHit, actualGroundCheckDistance + 1f, Physics.AllLayers, QueryTriggerInteraction.Ignore))
+					groundContactNormal = raycastHit.normal;
+				else
+					groundContactNormal = hitInfo.normal;
+
 				IsGrounded = true;
-				groundContactNormal = hitInfo.normal;
 			}
 			else
 			{
@@ -238,6 +240,7 @@ namespace Fralle.FpsController
 				groundContactNormal = Vector3.up;
 			}
 
+			rigidBody.useGravity = !IsGrounded;
 			if (previouslyGrounded != IsGrounded)
 			{
 				if (IsGrounded)
@@ -253,9 +256,10 @@ namespace Fralle.FpsController
 
 		void SlopeControl()
 		{
-			rigidBody.useGravity = true;
+			slopeAngle = Vector3.Angle(groundContactNormal, Vector3.up);
+			if (slopeAngle <= 0)
+				return;
 
-			var slopeAngle = Vector3.Angle(groundContactNormal, Vector3.up);
 			if (slopeAngle > maxWalkableSlopeAngle + 1)
 			{
 				rigidBody.AddForce(Vector3.down * slopeGlideMax, ForceMode.Acceleration);
@@ -339,6 +343,11 @@ namespace Fralle.FpsController
 		{
 			Vector3 velocity = rigidBody.velocity;
 			var grounded = FindGround(out ContactPoint groundCP, allCPs);
+			//Debug.Log(grounded);
+			//if (grounded)
+			//	rigidBody.useGravity = false;
+			//else
+			//	rigidBody.useGravity = true;
 			Vector3 stepUpOffset = default;
 			bool stepUp = false;
 			if (grounded)
