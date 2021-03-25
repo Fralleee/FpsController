@@ -9,6 +9,7 @@ namespace Fralle.FpsController
 {
 	public class PlayerController : MonoBehaviour
 	{
+
 		public event Action<float> OnGroundEnter = delegate { };
 		public event Action OnGroundLeave = delegate { };
 		public event Action<bool> OnCrouchStateChanged = delegate { };
