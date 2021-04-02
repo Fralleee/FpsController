@@ -194,7 +194,8 @@ namespace Fralle.FpsController
 		#region Camera Control
 		void CameraLook()
 		{
-			mouseCoords.y += Mathf.Clamp(mouseLook.y, -clampY, clampY) * mouseSensitivity;
+			mouseCoords.y += mouseLook.y * mouseSensitivity;
+			mouseCoords.y = Mathf.Clamp(mouseCoords.y, -clampY, clampY);
 			mouseCoords.x += mouseLook.x * mouseSensitivity;
 
 			currentRotationX = Mathf.SmoothDamp(currentRotationX, mouseCoords.x + affectRotation.x, ref mouseLookDampX, smoothTime);
