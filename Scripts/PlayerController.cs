@@ -226,12 +226,10 @@ namespace Fralle.FpsController
 		void GroundedCheck()
 		{
 			previouslyGrounded = IsGrounded;
-			if (Physics.SphereCast(body.position, capsule.radius - 0.001f, Vector3.down, out RaycastHit hitInfo, actualGroundCheckDistance, Physics.AllLayers, QueryTriggerInteraction.Ignore))
+			Debug.DrawLine(body.position + capsule.center, body.position + capsule.center + Vector3.down * (actualGroundCheckDistance + capsule.radius - 0.01f));
+			if (Physics.SphereCast(body.position + capsule.center, capsule.radius - 0.01f, Vector3.down, out RaycastHit hitInfo, actualGroundCheckDistance, Physics.AllLayers, QueryTriggerInteraction.Ignore))
 			{
-				if (Physics.Raycast(body.position, Vector3.down, out RaycastHit raycastHit, actualGroundCheckDistance + 1f, Physics.AllLayers, QueryTriggerInteraction.Ignore))
-					groundContactNormal = raycastHit.normal;
-				else
-					groundContactNormal = hitInfo.normal;
+				groundContactNormal = Physics.Raycast(body.position, Vector3.down, out RaycastHit raycastHit, actualGroundCheckDistance + 1f, Physics.AllLayers, QueryTriggerInteraction.Ignore) ? raycastHit.normal : hitInfo.normal;
 
 				IsGrounded = true;
 			}
@@ -242,17 +240,15 @@ namespace Fralle.FpsController
 			}
 
 			rigidBody.useGravity = !IsGrounded;
-			if (previouslyGrounded != IsGrounded)
+			if (previouslyGrounded == IsGrounded) return;
+			if (IsGrounded)
 			{
-				if (IsGrounded)
-				{
-					OnGroundEnter(rigidBody.velocity.y);
-					IsJumping = false;
-					jumpButton = false;
-				}
-				else
-					OnGroundLeave();
+				OnGroundEnter(rigidBody.velocity.y);
+				IsJumping = false;
+				jumpButton = false;
 			}
+			else
+				OnGroundLeave();
 		}
 
 		void SlopeControl()
@@ -272,23 +268,20 @@ namespace Fralle.FpsController
 				return;
 			}
 
-			if (rigidBody.velocity.y >= -0.2f)
-			{
-				rigidBody.useGravity = false;
-				rigidBody.AddForce(-groundContactNormal * 150f);
-			}
+			if (!(rigidBody.velocity.y >= -0.2f)) return;
+			rigidBody.useGravity = false;
+			rigidBody.AddForce(-groundContactNormal * 150f);
 		}
 
 		void StickToGroundHelper()
 		{
 			var distance = ((capsule.height / 2f) - capsule.radius) + stickToGroundHelperDistance;
-			if (Physics.SphereCast(body.position, capsule.radius, Vector3.down, out RaycastHit hitInfo, distance, Physics.AllLayers, QueryTriggerInteraction.Ignore))
-			{
-				if (Mathf.Abs(Vector3.Angle(hitInfo.normal, Vector3.up)) >= maxWalkableSlopeAngle)
-					return;
+			if (!Physics.SphereCast(body.position, capsule.radius, Vector3.down, out RaycastHit hitInfo, distance,
+				Physics.AllLayers, QueryTriggerInteraction.Ignore)) return;
+			if (Mathf.Abs(Vector3.Angle(hitInfo.normal, Vector3.up)) >= maxWalkableSlopeAngle)
+				return;
 
-				rigidBody.velocity = Vector3.ProjectOnPlane(rigidBody.velocity, hitInfo.normal);
-			}
+			rigidBody.velocity = Vector3.ProjectOnPlane(rigidBody.velocity, hitInfo.normal);
 		}
 		#endregion
 		#region Gravity Adjustments
@@ -344,11 +337,6 @@ namespace Fralle.FpsController
 		{
 			Vector3 velocity = rigidBody.velocity;
 			var grounded = FindGround(out ContactPoint groundCP, allCPs);
-			//Debug.Log(grounded);
-			//if (grounded)
-			//	rigidBody.useGravity = false;
-			//else
-			//	rigidBody.useGravity = true;
 			Vector3 stepUpOffset = default;
 			bool stepUp = false;
 			if (grounded)
