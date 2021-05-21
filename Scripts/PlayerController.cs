@@ -389,7 +389,8 @@ namespace Fralle.FpsController
 			bool found = false;
 			foreach (ContactPoint cp in allCPs)
 			{
-				if (!(cp.normal.y > 0.0001f) || (found && !(cp.normal.y > groundCp.normal.y))) continue;
+				if (!(cp.normal.y > 0.0001f) || (found && !(cp.normal.y > groundCp.normal.y)))
+					continue;
 				groundCp = cp;
 				found = true;
 			}
