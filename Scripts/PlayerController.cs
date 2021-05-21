@@ -203,7 +203,7 @@ namespace Fralle.FpsController
 
 			affectRotation = Vector2.SmoothDamp(affectRotation, Vector2.zero, ref affectRotation, 0);
 
-			var rot = Orientation.transform.rotation.eulerAngles;
+			Vector3 rot = Orientation.transform.rotation.eulerAngles;
 			Orientation.transform.localRotation = Quaternion.Euler(rot.x, currentRotationX, rot.z);
 			CameraRig.localRotation = Quaternion.Euler(currentRotationY, currentRotationX, 0);
 		}
@@ -489,7 +489,7 @@ namespace Fralle.FpsController
 		#region Limit speed
 		void LimitSpeed()
 		{
-			var horizontalMovement = new Vector3(RigidBody.velocity.x, 0, RigidBody.velocity.z);
+			Vector3 horizontalMovement = new Vector3(RigidBody.velocity.x, 0, RigidBody.velocity.z);
 			if (horizontalMovement.magnitude <= ModifiedMovementSpeed)
 				return;
 
