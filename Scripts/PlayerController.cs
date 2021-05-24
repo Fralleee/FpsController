@@ -517,5 +517,11 @@ namespace Fralle.FpsController
 			playerInput.actions["Crouch"].canceled -= OnCrouchCancel;
 			playerInput.actions["Crouch"].performed -= OnCrouch;
 		}
+
+		void OnValidate()
+		{
+			ModifiedMovementSpeed = baseMovementSpeed;
+			ModifiedJumpStrength = baseJumpStrength;
+		}
 	}
 }
