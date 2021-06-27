@@ -2,8 +2,8 @@
     "name": "Fralle.FpsController",
     "rootNamespace": "Fralle.FpsController",
     "references": [
-        "GUID:efdc2ceca781e5543aae5e2e302352ad",
-        "GUID:75469ad4d38634e559750d17036d5f7c"
+        "Unity.InputSystem",
+        "Fralle.Core"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
