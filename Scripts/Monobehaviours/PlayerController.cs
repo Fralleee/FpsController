@@ -102,9 +102,7 @@ namespace Fralle.FpsController
 			playerInput = GetComponent<PlayerInput>();
 			playerInput.actions["Movement"].performed += OnMovement;
 			playerInput.actions["Look"].performed += OnLook;
-			playerInput.actions["Jump"].canceled += OnJumpCancel;
 			playerInput.actions["Jump"].performed += OnJump;
-			playerInput.actions["Crouch"].canceled += OnCrouchCancel;
 			playerInput.actions["Crouch"].performed += OnCrouch;
 
 			ModifiedMovementSpeed = baseMovementSpeed;
@@ -172,22 +170,14 @@ namespace Fralle.FpsController
 			MouseLook = context.ReadValue<Vector2>();
 		}
 
-		public void OnJumpCancel(InputAction.CallbackContext context)
-		{
-			jumpButton = false;
-		}
 		public void OnJump(InputAction.CallbackContext context)
 		{
-			jumpButton = true;
+			jumpButton = context.ReadValueAsButton();
 		}
 
-		public void OnCrouchCancel(InputAction.CallbackContext context)
-		{
-			crouchButton = false;
-		}
 		public void OnCrouch(InputAction.CallbackContext context)
 		{
-			crouchButton = true;
+			crouchButton = context.ReadValueAsButton();
 		}
 		#endregion
 
@@ -512,9 +502,7 @@ namespace Fralle.FpsController
 		{
 			playerInput.actions["Movement"].performed -= OnMovement;
 			playerInput.actions["Look"].performed -= OnLook;
-			playerInput.actions["Jump"].canceled -= OnJumpCancel;
 			playerInput.actions["Jump"].performed -= OnJump;
-			playerInput.actions["Crouch"].canceled -= OnCrouchCancel;
 			playerInput.actions["Crouch"].performed -= OnCrouch;
 		}
 
