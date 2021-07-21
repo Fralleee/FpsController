@@ -62,6 +62,7 @@ namespace Fralle.FpsController
 		public Vector2 Movement { get; private set; }
 		public Vector2 MouseLook { get; private set; }
 		PlayerInput playerInput;
+		Animator animator;
 		Vector3 lastVelocity;
 		Vector3 desiredForce;
 		Vector3 groundContactNormal;
@@ -83,11 +84,16 @@ namespace Fralle.FpsController
 		readonly float slopeGlideMax = 100f;
 		[Readonly] public float SlopeAngle;
 		float ActualGroundCheckDistance => (Capsule.height / 2f) - Capsule.radius + groundCheckDistance;
+		int animIsMoving;
+		int animIsJumping;
+		int animHorizontal;
+		int animVertical;
 
 		void Awake()
 		{
 			RigidBody = Body.GetComponent<Rigidbody>();
 			Capsule = Body.GetComponent<CapsuleCollider>();
+			animator = Body.GetComponentInChildren<Animator>();
 
 			defaultScale = Body.localScale;
 			crouchingScale = new Vector3(1, 0.5f, 1);
@@ -107,6 +113,11 @@ namespace Fralle.FpsController
 
 			ModifiedMovementSpeed = baseMovementSpeed;
 			ModifiedJumpStrength = baseJumpStrength;
+
+			animIsMoving = Animator.StringToHash("IsMoving");
+			animIsJumping = Animator.StringToHash("IsJumping");
+			animHorizontal = Animator.StringToHash("Horizontal");
+			animVertical = Animator.StringToHash("Vertical");
 		}
 
 		void Update()
@@ -163,6 +174,9 @@ namespace Fralle.FpsController
 		public void OnMovement(InputAction.CallbackContext context)
 		{
 			Movement = context.ReadValue<Vector2>();
+
+			animator.SetFloat(animHorizontal, Movement.x);
+			animator.SetFloat(animVertical, Movement.y);
 		}
 
 		public void OnLook(InputAction.CallbackContext context)
@@ -237,6 +251,8 @@ namespace Fralle.FpsController
 				IsGrounded = false;
 				groundContactNormal = Vector3.up;
 			}
+
+			animator.SetBool(animIsJumping, !IsGrounded);
 
 			RigidBody.useGravity = !IsGrounded;
 			if (previouslyGrounded == IsGrounded)
@@ -323,6 +339,8 @@ namespace Fralle.FpsController
 			{
 				GroundMove();
 				IsMoving = desiredForce.magnitude > 0; // also check if not blocked
+
+				animator.SetBool(animIsMoving, IsMoving);
 			}
 			else
 			{
