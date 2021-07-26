@@ -1,7 +1,6 @@
 using Fralle.Core.Attributes;
 using Fralle.Core.Extensions;
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -18,6 +17,7 @@ namespace Fralle.FpsController
 		public Transform CameraRig;
 		public Transform Orientation;
 		public Transform Body;
+		[SerializeField] LayerMask groundLayers;
 		[HideInInspector] public Rigidbody RigidBody;
 		[HideInInspector] public CapsuleCollider Capsule;
 
@@ -39,10 +39,6 @@ namespace Fralle.FpsController
 		[SerializeField] float airControl = 0.5f;
 		[Readonly] public float ModifiedMovementSpeed;
 
-		[Header("Step Climbing")]
-		[SerializeField] float stepHeight = 0.4f;
-		[SerializeField] float stepSearchOvershoot = 0.01f;
-
 		[Header("Ground Control")]
 		[SerializeField] float maxSlopeGlideAngle = 35;
 		[SerializeField] float maxWalkableSlopeAngle = 45;
@@ -58,7 +54,6 @@ namespace Fralle.FpsController
 		[SerializeField] float crouchingSpeed = 8f;
 		[SerializeField] float crouchHeight = 1f;
 
-		readonly List<ContactPoint> allCPs = new List<ContactPoint>();
 		public Vector2 Movement { get; private set; }
 		public Vector2 MouseLook { get; private set; }
 		PlayerInput playerInput;
@@ -150,7 +145,6 @@ namespace Fralle.FpsController
 			if (IsGrounded)
 			{
 				SlopeControl();
-				ClimbSteps();
 			}
 
 			Move();
@@ -233,10 +227,10 @@ namespace Fralle.FpsController
 
 			Debug.DrawLine(Body.position + Capsule.center, Body.position + Capsule.center + Vector3.down * (ActualGroundCheckDistance + Capsule.radius - 0.001f));
 
-			if (Physics.SphereCast(Body.position + Capsule.center, Capsule.radius - 0.001f, Vector3.down, out RaycastHit hitInfo, ActualGroundCheckDistance, Physics.AllLayers, QueryTriggerInteraction.Ignore))
+			if (Physics.SphereCast(Body.position + Capsule.center, Capsule.radius - 0.001f, Vector3.down, out RaycastHit hitInfo, ActualGroundCheckDistance, groundLayers, QueryTriggerInteraction.Ignore))
 			{
 				if (Physics.Raycast(Body.position + Capsule.center, Vector3.down, out RaycastHit raycastHit,
-					(ActualGroundCheckDistance + Capsule.radius - 0.001f), Physics.AllLayers, QueryTriggerInteraction.Ignore))
+					(ActualGroundCheckDistance + Capsule.radius - 0.001f), groundLayers, QueryTriggerInteraction.Ignore))
 				{
 					groundContactNormal = raycastHit.normal;
 				}
@@ -272,7 +266,7 @@ namespace Fralle.FpsController
 			SlopeAngle = Vector3.Angle(groundContactNormal, Vector3.up);
 
 			if (Physics.Raycast(Orientation.position, desiredForce, out RaycastHit raycastHit, Capsule.radius,
-				Physics.AllLayers, QueryTriggerInteraction.Ignore))
+				groundLayers, QueryTriggerInteraction.Ignore))
 			{
 				float forwardSlopeAngle = Vector3.Angle(raycastHit.normal, Vector3.up);
 
@@ -370,90 +364,6 @@ namespace Fralle.FpsController
 			RigidBody.velocity = Vector3.SmoothDamp(RigidBody.velocity, Vector3.zero, ref damp, stopTime).With(y: RigidBody.velocity.y);
 		}
 		#endregion
-		#region Step Climbing
-		void ClimbSteps()
-		{
-			Vector3 velocity = RigidBody.velocity;
-			bool grounded = FindGround(out ContactPoint groundCp, allCPs);
-			Vector3 stepUpOffset = default;
-			bool stepUp = false;
-			if (grounded)
-				stepUp = FindStep(out stepUpOffset, allCPs, groundCp, velocity);
-
-			if (stepUp)
-			{
-				RigidBody.position += stepUpOffset;
-				RigidBody.velocity = lastVelocity;
-			}
-
-			allCPs.Clear();
-			lastVelocity = velocity;
-		}
-
-
-		static bool FindGround(out ContactPoint groundCp, IEnumerable<ContactPoint> allCPs)
-		{
-			groundCp = default;
-			bool found = false;
-			foreach (ContactPoint cp in allCPs)
-			{
-				if (!(cp.normal.y > 0.0001f) || (found && !(cp.normal.y > groundCp.normal.y)))
-					continue;
-				groundCp = cp;
-				found = true;
-			}
-
-			return found;
-		}
-
-		bool FindStep(out Vector3 stepUpOffset, IEnumerable<ContactPoint> allContactPoints, ContactPoint groundCp, Vector3 currVelocity)
-		{
-			stepUpOffset = default;
-			Vector2 velocityXz = new Vector2(currVelocity.x, currVelocity.z);
-			if (velocityXz.sqrMagnitude < 0.0001f)
-				return false;
-
-			foreach (ContactPoint cp in allContactPoints)
-			{
-				bool test = ResolveStepUp(out stepUpOffset, cp, groundCp);
-				if (test)
-					return true;
-			}
-			return false;
-		}
-
-		bool ResolveStepUp(out Vector3 stepUpOffset, ContactPoint stepTestCp, ContactPoint groundCp)
-		{
-			stepUpOffset = default;
-			Collider stepCol = stepTestCp.otherCollider;
-
-			if (Mathf.Abs(stepTestCp.normal.y) >= 0.01f)
-			{
-				return false;
-			}
-
-			if (stepTestCp.point.y - groundCp.point.y >= stepHeight)
-			{
-				return false;
-			}
-
-			float actualStepHeight = groundCp.point.y + stepHeight + 0.0001f;
-			Vector3 stepTestInvDir = new Vector3(-stepTestCp.normal.x, 0, -stepTestCp.normal.z).normalized;
-			Vector3 origin = new Vector3(stepTestCp.point.x, actualStepHeight, stepTestCp.point.z) + (stepTestInvDir * stepSearchOvershoot);
-			Vector3 direction = Vector3.down;
-			if (!(stepCol.Raycast(new Ray(origin, direction), out RaycastHit hitInfo, stepHeight)))
-			{
-				return false;
-			}
-
-			Vector3 stepUpPoint = new Vector3(stepTestCp.point.x, hitInfo.point.y + 0.0001f, stepTestCp.point.z) + (stepTestInvDir * stepSearchOvershoot);
-			Vector3 stepUpPointOffset = stepUpPoint - new Vector3(stepTestCp.point.x, groundCp.point.y, stepTestCp.point.z);
-
-			stepUpOffset = stepUpPointOffset;
-			return true;
-		}
-
-		#endregion
 		#region Crouching
 		void Crouch()
 		{
@@ -468,7 +378,7 @@ namespace Fralle.FpsController
 					Body.localScale = Vector3.Lerp(Body.localScale, crouchingScale, Time.deltaTime * crouchingSpeed);
 				}
 			}
-			else if (IsCrouching && !Physics.Raycast(transform.position, Vector3.up, roofCheckHeight))
+			else if (IsCrouching && !Physics.Raycast(transform.position, Vector3.up, roofCheckHeight, groundLayers))
 			{
 				IsCrouching = false;
 				OnCrouchStateChanged(false);
@@ -505,16 +415,6 @@ namespace Fralle.FpsController
 			RigidBody.velocity = new Vector3(horizontalMovement.x, RigidBody.velocity.y, horizontalMovement.z);
 		}
 		#endregion
-
-		void OnCollisionEnter(Collision col)
-		{
-			allCPs.AddRange(col.contacts);
-		}
-
-		void OnCollisionStay(Collision col)
-		{
-			allCPs.AddRange(col.contacts);
-		}
 
 		void OnDestroy()
 		{
