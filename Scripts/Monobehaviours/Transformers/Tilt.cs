@@ -13,13 +13,13 @@ namespace Fralle.FpsController
 		[SerializeField] float strafeRotationAmount = 1.6f;
 		[SerializeField] float maxStrafeRotation = 5f;
 
-		PlayerController playerController;
+		RigidbodyController playerController;
 
 		Quaternion currentRotation = Quaternion.identity;
 
 		void Awake()
 		{
-			playerController = GetComponentInParent<PlayerController>();
+			playerController = GetComponentInParent<RigidbodyController>();
 		}
 
 		public override Vector3 GetPosition() => Vector3.zero;

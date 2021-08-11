@@ -12,13 +12,13 @@ namespace Fralle.FpsController
 		[SerializeField] float lookRotationAmount = 0.6f;
 		[SerializeField] float maxLookRotation = 3f;
 
-		PlayerController playerController;
+		RigidbodyController playerController;
 
 		Quaternion currentRotation = Quaternion.identity;
 
 		void Awake()
 		{
-			playerController = GetComponentInParent<PlayerController>();
+			playerController = GetComponentInParent<RigidbodyController>();
 		}
 
 		public override Vector3 GetPosition() => Vector3.zero;
