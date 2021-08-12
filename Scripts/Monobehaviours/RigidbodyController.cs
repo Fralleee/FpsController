@@ -165,19 +165,6 @@ namespace Fralle.FpsController
 			CameraRig.localRotation = Quaternion.Euler(currentRotationY, currentRotationX, 0);
 		}
 
-		public static void ConfigureCursor(bool doLock = true)
-		{
-			if (doLock)
-			{
-				Cursor.visible = false;
-				Cursor.lockState = CursorLockMode.Locked;
-			}
-			else
-			{
-				Cursor.visible = true;
-				Cursor.lockState = CursorLockMode.None;
-			}
-		}
 		#endregion
 		#region Ground Control
 		void GroundedCheck()
