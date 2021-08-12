@@ -93,8 +93,6 @@ namespace Fralle.FpsController
 			crouchHeight = Capsule.height * crouchingScale.y * Body.localScale.y;
 			roofCheckHeight = Capsule.height - crouchHeight * 0.5f - 0.01f;
 
-			ConfigureCursor();
-
 			if (!Camera)
 				Camera = Camera.main;
 
