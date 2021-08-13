@@ -1,4 +1,5 @@
 using Fralle.Core;
+using Fralle.Core.CameraControls;
 using Fralle.Core.Extensions;
 using System;
 using UnityEngine;
@@ -47,6 +48,8 @@ namespace Fralle.FpsController
 		[SerializeField] float baseJumpStrength = 8f;
 		[SerializeField] float fallMultiplier = 2.5f;
 		[SerializeField] float lowJumpModifier = 2f;
+		[SerializeField] ShakeTransformEventData jumpShake;
+		[SerializeField] ShakeTransformEventData landShake;
 		[Readonly] public float ModifiedJumpStrength;
 
 		[Header("Crouching")]
@@ -56,6 +59,7 @@ namespace Fralle.FpsController
 		public Vector2 Movement { get; protected set; }
 		public Vector2 MouseLook { get; protected set; }
 		protected Animator animator;
+		ShakeTransform cameraShakeTransform;
 		Vector3 lastVelocity;
 		Vector3 desiredForce;
 		Vector3 groundContactNormal;
@@ -95,6 +99,8 @@ namespace Fralle.FpsController
 
 			if (!Camera)
 				Camera = Camera.main;
+
+			cameraShakeTransform = Camera.GetComponentInParent<ShakeTransform>();
 
 			ModifiedMovementSpeed = baseMovementSpeed;
 			ModifiedJumpStrength = baseJumpStrength;
@@ -195,14 +201,14 @@ namespace Fralle.FpsController
 			RigidBody.useGravity = !IsGrounded;
 			if (previouslyGrounded == IsGrounded)
 				return;
+
 			if (IsGrounded)
 			{
 				OnGroundEnter(RigidBody.velocity.y);
+				cameraShakeTransform.AddShakeEvent(landShake);
 				IsJumping = false;
 				jumpButton = false;
 			}
-			else
-				OnGroundLeave();
 		}
 
 		void SlopeControl()
@@ -346,6 +352,9 @@ namespace Fralle.FpsController
 			RigidBody.useGravity = true;
 			RigidBody.velocity = new Vector3(RigidBody.velocity.x, 0f, RigidBody.velocity.z);
 			RigidBody.AddForce(Vector3.up * ModifiedJumpStrength * slopeMultiplier, ForceMode.VelocityChange);
+
+			cameraShakeTransform.AddShakeEvent(jumpShake);
+			OnGroundLeave();
 		}
 		#endregion
 		#region Limit speed
