@@ -20,12 +20,13 @@ namespace Fralle.FpsController
 		[HideInInspector] public Rigidbody RigidBody;
 		[HideInInspector] public CapsuleCollider Capsule;
 
-		[Header("Flags")]
+		[Header("Status")]
 		[Readonly] public bool IsLocked;
 		[Readonly] public bool IsGrounded;
 		[Readonly] public bool IsMoving;
 		[Readonly] public bool IsJumping;
 		[Readonly] public bool IsCrouching;
+		[Readonly] public float SlopeAngle;
 
 		[Header("Mouse look")]
 		[SerializeField] float mouseSensitivity = 3f;
@@ -39,8 +40,8 @@ namespace Fralle.FpsController
 		[Readonly] public float ModifiedMovementSpeed;
 
 		[Header("Ground Control")]
-		[SerializeField] float maxSlopeGlideAngle = 35;
-		[SerializeField] float maxWalkableSlopeAngle = 45;
+		[SerializeField] float maxAngleWalkable = 35;
+		[SerializeField] float maxAngleGrounded = 45;
 		[SerializeField] float groundCheckDistance = 0.1f;
 
 		[Header("Jump")]
@@ -56,7 +57,6 @@ namespace Fralle.FpsController
 		public Vector2 Movement { get; protected set; }
 		public Vector2 MouseLook { get; protected set; }
 		protected Animator animator;
-		Vector3 lastVelocity;
 		Vector3 desiredForce;
 		Vector3 groundContactNormal;
 		Vector3 damp;
@@ -73,9 +73,6 @@ namespace Fralle.FpsController
 		float mouseLookDampX;
 		float mouseLookDampY;
 		float roofCheckHeight;
-		float slopeMultiplier = 1f;
-		readonly float slopeGlideMax = 100f;
-		[Readonly] public float SlopeAngle;
 		float ActualGroundCheckDistance => (Capsule.height / 2f) - Capsule.radius + groundCheckDistance;
 		int animIsMoving;
 		int animIsJumping;
@@ -124,10 +121,10 @@ namespace Fralle.FpsController
 			desiredForce = Orientation.right * Movement.x + Orientation.forward * Movement.y;
 			GroundedCheck();
 
-			if (IsGrounded)
-			{
-				SlopeControl();
-			}
+			//if (IsGrounded)
+			//{
+			//	SlopeControl();
+			//}
 
 			Move();
 			Crouch();
@@ -168,6 +165,8 @@ namespace Fralle.FpsController
 		void GroundedCheck()
 		{
 			previouslyGrounded = IsGrounded;
+			SlopeAngle = 0;
+			RigidBody.useGravity = true;
 
 			Debug.DrawLine(Body.position + Capsule.center, Body.position + Capsule.center + Vector3.down * (ActualGroundCheckDistance + Capsule.radius - 0.001f));
 
@@ -192,69 +191,37 @@ namespace Fralle.FpsController
 
 			animator.SetBool(animIsJumping, !IsGrounded);
 
-			if (previouslyGrounded == IsGrounded)
-				return;
-
 			if (IsGrounded)
 			{
-				OnGroundEnter(RigidBody.velocity.y);
-				IsJumping = false;
-				jumpButton = false;
+
+				if (previouslyGrounded != IsGrounded)
+				{
+					OnGroundEnter(RigidBody.velocity.y);
+					IsJumping = false;
+					jumpButton = false;
+				}
+
+				SlopeAngle = Vector3.Angle(groundContactNormal, Vector3.up);
+				RigidBody.useGravity = SlopeAngle > maxAngleWalkable + 1;
+
+				bool shouldSlideDown = SlopeAngle > maxAngleWalkable + 1;
+				if (shouldSlideDown)
+				{
+					var downSlopeForce = Vector3.ProjectOnPlane(Physics.gravity, groundContactNormal);
+					RigidBody.AddForce(downSlopeForce * 5f);
+
+					bool shouldNotBeGrounded = SlopeAngle > maxAngleGrounded + 1;
+					if (shouldNotBeGrounded)
+						IsGrounded = false;
+				}
+
 			}
-		}
 
-		void SlopeControl()
-		{
-			//SlopeAngle = Vector3.Angle(groundContactNormal, Vector3.up);
-			//Debug.Log($"SlopeAngle:{SlopeAngle}");
-
-			//if (Physics.Raycast(Orientation.position, desiredForce, out RaycastHit raycastHit, Capsule.radius,
-			//	groundLayers, QueryTriggerInteraction.Ignore))
-			//{
-			//	float forwardSlopeAngle = Vector3.Angle(raycastHit.normal, Vector3.up);
-
-			//	if (forwardSlopeAngle >= 89) // not a slope
-			//		slopeMultiplier = 1f;
-			//	else if (forwardSlopeAngle >= maxWalkableSlopeAngle + 1)
-			//		slopeMultiplier = 0.25f;
-			//	else
-			//		slopeMultiplier = Mathf.Clamp(1 - (forwardSlopeAngle - (maxSlopeGlideAngle + 1)) / ((maxWalkableSlopeAngle + 1) - (maxSlopeGlideAngle + 1)), 0.5f, 1);
-			//}
-			//else
-			//{
-			//	slopeMultiplier = 1f;
-			//}
-
-			//Debug.Log($"slopeMultiplier:{slopeMultiplier}");
-
-
-			//if (SlopeAngle <= 0)
-			//	return;
-
-			//if (SlopeAngle > maxWalkableSlopeAngle + 1)
-			//{
-			//	RigidBody.AddForce(Vector3.down * slopeGlideMax, ForceMode.Acceleration);
-			//	return;
-			//}
-
-			//if (SlopeAngle > maxSlopeGlideAngle + 1f)
-			//{
-			//	float factor = SlopeAngle / maxWalkableSlopeAngle;
-			//	RigidBody.AddForce(Vector3.down * slopeGlideMax * factor, ForceMode.Acceleration);
-			//	return;
-			//}
-
-			//if (!(RigidBody.velocity.y >= -0.2f))
-			//	return;
-
-			//Debug.Log("Adding force towards ground");
-			//RigidBody.useGravity = false;
-			//RigidBody.AddForce(-groundContactNormal * 150f);
 		}
 
 		void StickToGroundHelper()
 		{
-			if (Mathf.Abs(Vector3.Angle(groundContactNormal, Vector3.up)) >= maxWalkableSlopeAngle)
+			if (Mathf.Abs(SlopeAngle) >= maxAngleWalkable)
 				return;
 
 			RigidBody.velocity = Vector3.ProjectOnPlane(RigidBody.velocity, groundContactNormal);
@@ -291,7 +258,7 @@ namespace Fralle.FpsController
 		void GroundMove()
 		{
 			desiredForce = Vector3.ProjectOnPlane(desiredForce, groundContactNormal).normalized;
-			RigidBody.AddForce(desiredForce * ModifiedMovementSpeed * slopeMultiplier, ForceMode.Impulse);
+			RigidBody.AddForce(desiredForce * ModifiedMovementSpeed, ForceMode.Impulse);
 			StoppingForcesGround();
 		}
 
@@ -346,7 +313,7 @@ namespace Fralle.FpsController
 			IsJumping = true;
 			IsGrounded = false;
 			RigidBody.velocity = new Vector3(RigidBody.velocity.x, 0f, RigidBody.velocity.z);
-			RigidBody.AddForce(Vector3.up * ModifiedJumpStrength * slopeMultiplier, ForceMode.VelocityChange);
+			RigidBody.AddForce(Vector3.up * ModifiedJumpStrength, ForceMode.VelocityChange);
 
 			OnGroundLeave();
 		}
