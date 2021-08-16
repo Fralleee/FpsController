@@ -1,5 +1,4 @@
 using Fralle.Core;
-using Fralle.Core.CameraControls;
 using Fralle.Core.Extensions;
 using System;
 using UnityEngine;
@@ -48,8 +47,6 @@ namespace Fralle.FpsController
 		[SerializeField] float baseJumpStrength = 8f;
 		[SerializeField] float fallMultiplier = 2.5f;
 		[SerializeField] float lowJumpModifier = 2f;
-		[SerializeField] ShakeTransformEventData jumpShake;
-		[SerializeField] ShakeTransformEventData landShake;
 		[Readonly] public float ModifiedJumpStrength;
 
 		[Header("Crouching")]
@@ -59,7 +56,6 @@ namespace Fralle.FpsController
 		public Vector2 Movement { get; protected set; }
 		public Vector2 MouseLook { get; protected set; }
 		protected Animator animator;
-		ShakeTransform cameraShakeTransform;
 		Vector3 lastVelocity;
 		Vector3 desiredForce;
 		Vector3 groundContactNormal;
@@ -99,8 +95,6 @@ namespace Fralle.FpsController
 
 			if (!Camera)
 				Camera = Camera.main;
-
-			cameraShakeTransform = Camera.GetComponentInParent<ShakeTransform>();
 
 			ModifiedMovementSpeed = baseMovementSpeed;
 			ModifiedJumpStrength = baseJumpStrength;
@@ -198,14 +192,12 @@ namespace Fralle.FpsController
 
 			animator.SetBool(animIsJumping, !IsGrounded);
 
-			RigidBody.useGravity = !IsGrounded;
 			if (previouslyGrounded == IsGrounded)
 				return;
 
 			if (IsGrounded)
 			{
 				OnGroundEnter(RigidBody.velocity.y);
-				cameraShakeTransform.AddShakeEvent(landShake);
 				IsJumping = false;
 				jumpButton = false;
 			}
@@ -213,47 +205,51 @@ namespace Fralle.FpsController
 
 		void SlopeControl()
 		{
-			SlopeAngle = Vector3.Angle(groundContactNormal, Vector3.up);
+			//SlopeAngle = Vector3.Angle(groundContactNormal, Vector3.up);
+			//Debug.Log($"SlopeAngle:{SlopeAngle}");
 
-			if (Physics.Raycast(Orientation.position, desiredForce, out RaycastHit raycastHit, Capsule.radius,
-				groundLayers, QueryTriggerInteraction.Ignore))
-			{
-				float forwardSlopeAngle = Vector3.Angle(raycastHit.normal, Vector3.up);
+			//if (Physics.Raycast(Orientation.position, desiredForce, out RaycastHit raycastHit, Capsule.radius,
+			//	groundLayers, QueryTriggerInteraction.Ignore))
+			//{
+			//	float forwardSlopeAngle = Vector3.Angle(raycastHit.normal, Vector3.up);
 
-				if (forwardSlopeAngle >= 89) // not a slope
-					slopeMultiplier = 1f;
-				else if (forwardSlopeAngle >= maxWalkableSlopeAngle + 1)
-					slopeMultiplier = 0.25f;
-				else
-					slopeMultiplier = Mathf.Clamp(1 - (forwardSlopeAngle - (maxSlopeGlideAngle + 1)) / ((maxWalkableSlopeAngle + 1) - (maxSlopeGlideAngle + 1)), 0.5f, 1);
-			}
-			else
-			{
-				slopeMultiplier = 1f;
-			}
+			//	if (forwardSlopeAngle >= 89) // not a slope
+			//		slopeMultiplier = 1f;
+			//	else if (forwardSlopeAngle >= maxWalkableSlopeAngle + 1)
+			//		slopeMultiplier = 0.25f;
+			//	else
+			//		slopeMultiplier = Mathf.Clamp(1 - (forwardSlopeAngle - (maxSlopeGlideAngle + 1)) / ((maxWalkableSlopeAngle + 1) - (maxSlopeGlideAngle + 1)), 0.5f, 1);
+			//}
+			//else
+			//{
+			//	slopeMultiplier = 1f;
+			//}
+
+			//Debug.Log($"slopeMultiplier:{slopeMultiplier}");
 
 
-			if (SlopeAngle <= 0)
-				return;
+			//if (SlopeAngle <= 0)
+			//	return;
 
-			if (SlopeAngle > maxWalkableSlopeAngle + 1)
-			{
-				RigidBody.AddForce(Vector3.down * slopeGlideMax, ForceMode.Acceleration);
-				return;
-			}
+			//if (SlopeAngle > maxWalkableSlopeAngle + 1)
+			//{
+			//	RigidBody.AddForce(Vector3.down * slopeGlideMax, ForceMode.Acceleration);
+			//	return;
+			//}
 
-			if (SlopeAngle > maxSlopeGlideAngle + 1f)
-			{
-				float factor = SlopeAngle / maxWalkableSlopeAngle;
-				RigidBody.AddForce(Vector3.down * slopeGlideMax * factor, ForceMode.Acceleration);
-				return;
-			}
+			//if (SlopeAngle > maxSlopeGlideAngle + 1f)
+			//{
+			//	float factor = SlopeAngle / maxWalkableSlopeAngle;
+			//	RigidBody.AddForce(Vector3.down * slopeGlideMax * factor, ForceMode.Acceleration);
+			//	return;
+			//}
 
-			if (!(RigidBody.velocity.y >= -0.2f))
-				return;
+			//if (!(RigidBody.velocity.y >= -0.2f))
+			//	return;
 
-			RigidBody.useGravity = false;
-			RigidBody.AddForce(-groundContactNormal * 150f);
+			//Debug.Log("Adding force towards ground");
+			//RigidBody.useGravity = false;
+			//RigidBody.AddForce(-groundContactNormal * 150f);
 		}
 
 		void StickToGroundHelper()
@@ -349,11 +345,9 @@ namespace Fralle.FpsController
 			queueJump = false;
 			IsJumping = true;
 			IsGrounded = false;
-			RigidBody.useGravity = true;
 			RigidBody.velocity = new Vector3(RigidBody.velocity.x, 0f, RigidBody.velocity.z);
 			RigidBody.AddForce(Vector3.up * ModifiedJumpStrength * slopeMultiplier, ForceMode.VelocityChange);
 
-			cameraShakeTransform.AddShakeEvent(jumpShake);
 			OnGroundLeave();
 		}
 		#endregion
