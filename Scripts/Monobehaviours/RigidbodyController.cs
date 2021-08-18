@@ -56,6 +56,7 @@ namespace Fralle.FpsController
     public Vector2 Movement { get; protected set; }
     public Vector2 MouseLook { get; protected set; }
     protected Animator animator;
+    LookRotationTransformer rotationTransformer;
     Vector3 desiredForce;
     Vector3 groundContactNormal;
     Vector3 damp;
@@ -91,6 +92,8 @@ namespace Fralle.FpsController
 
       if (!Camera)
         Camera = Camera.main;
+
+      rotationTransformer = CameraRig.GetComponent<LookRotationTransformer>();
 
       ModifiedMovementSpeed = baseMovementSpeed;
       ModifiedJumpStrength = baseJumpStrength;
@@ -156,7 +159,7 @@ namespace Fralle.FpsController
 
       Vector3 rot = Orientation.transform.rotation.eulerAngles;
       Orientation.transform.localRotation = Quaternion.Euler(rot.x, currentRotationX, rot.z);
-      CameraRig.localRotation = Quaternion.Euler(currentRotationY, currentRotationX, 0);
+      rotationTransformer.ApplyLookRotation(Quaternion.Euler(currentRotationY, currentRotationX, 0));
     }
 
     #endregion

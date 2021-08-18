@@ -1,9 +1,9 @@
-using Fralle.PingTap;
+using Fralle.Core;
 using UnityEngine;
 
 namespace Fralle.FpsController
 {
-  public class Sway : Transformer
+  public class SwayTransformer : LocalTransformer, IRotator
   {
     [Header("Speed")]
     [SerializeField] float smoothRotation = 10f;
@@ -21,8 +21,7 @@ namespace Fralle.FpsController
       playerController = GetComponentInParent<RigidbodyController>();
     }
 
-    public override Vector3 GetPosition() => Vector3.zero;
-    public override Quaternion GetRotation() => currentRotation;
+    public Quaternion GetRotation() => currentRotation;
     public override void Calculate()
     {
       float lookAmountX = Mathf.Clamp(playerController.MouseLook.x * lookRotationAmount, -maxLookRotation, maxLookRotation);

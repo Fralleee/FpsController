@@ -1,10 +1,9 @@
 using Fralle.Core;
-using Fralle.PingTap;
 using UnityEngine;
 
 namespace Fralle.FpsController
 {
-  public class Tilt : Transformer
+  public class TiltTransformer : LocalTransformer, IRotator
   {
     [Header("Speed")]
     [SerializeField] float smoothSpeed = 10f;
@@ -22,8 +21,7 @@ namespace Fralle.FpsController
       playerController = GetComponentInParent<RigidbodyController>();
     }
 
-    public override Vector3 GetPosition() => Vector3.zero;
-    public override Quaternion GetRotation() => currentRotation;
+    public Quaternion GetRotation() => currentRotation;
     public override void Calculate()
     {
       if (playerController.IsMoving && !playerController.Movement.x.EqualsWithTolerance(0f))
