@@ -26,8 +26,7 @@ public class GroundCheck : MonoBehaviour
     foreach (ContactPoint contactPoint in contacts)
     {
       Vector3 dir = curve - contactPoint.point;
-
-      if (dir.y > 0f)
+      if (dir.y > 0f || contactPoint.normal.y > 0.01f)
       {
         rigidbodyController.GroundContactNormal = contactPoint.normal;
         rigidbodyController.SlopeAngle = Mathf.Min(rigidbodyController.SlopeAngle, Vector3.Angle(contactPoint.normal, Vector3.up));
@@ -40,7 +39,11 @@ public class GroundCheck : MonoBehaviour
   //{
   //  Gizmos.color = Color.blue;
   //  foreach (ContactPoint contactPoint in contacts)
+  //  {
   //    Gizmos.DrawSphere(contactPoint.point, .25f);
+  //    Vector3 dir = curve - contactPoint.point;
+  //    Gizmos.DrawLine(contactPoint.point, dir);
+  //  }
 
   //  Gizmos.color = Color.red;
   //  Gizmos.DrawSphere(bottom, .05f);

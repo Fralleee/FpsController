@@ -9,30 +9,33 @@ namespace Fralle.FpsController
     public event Action OnGroundLeave = delegate { };
 
     [Header("Jumping")]
-    [SerializeField] float baseJumpStrength = 8f;
-    [Readonly] public float ModifiedJumpStrength;
+    [SerializeField] float jumpHeight = 2f;
+    [Readonly] public float ModifiedJumpHeight;
 
     protected bool jumpButton;
 
-    bool queueJump;
+    public bool queueJump;
 
     void Jumping()
     {
       queueJump = false;
       IsJumping = true;
       IsGrounded = false;
-
-      Invoke("RemoveJumpFlag", 0.1f);
+      extraCrouchBoost = true;
 
       CancelVelocityOnJump();
-      RigidBody.AddForce(Vector3.up * ModifiedJumpStrength, ForceMode.VelocityChange);
+      RigidBody.AddForce(Vector3.up * Mathf.Sqrt(-2f * Physics.gravity.y * gravityModifier * ModifiedJumpHeight), ForceMode.VelocityChange);
 
       OnGroundLeave();
     }
 
-    void RemoveJumpFlag()
+    void ResetJumpingFlag()
     {
-      IsJumping = false;
+      if (IsJumping && RigidBody.velocity.y <= 0)
+      {
+        IsJumping = false;
+        extraCrouchBoost = false;
+      }
     }
 
     void CancelVelocityOnJump()

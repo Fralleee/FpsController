@@ -31,7 +31,6 @@ namespace Fralle.FpsController
 
     void GroundMove()
     {
-      desiredForce = Vector3.ProjectOnPlane(desiredForce, GroundContactNormal).normalized;
       RigidBody.AddForce(desiredForce * ModifiedMovementSpeed, ForceMode.Impulse);
       StoppingForcesGround();
     }

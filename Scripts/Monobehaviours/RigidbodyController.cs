@@ -46,13 +46,12 @@ namespace Fralle.FpsController
 
       rotationTransformer = CameraRig.GetComponent<LookRotationTransformer>();
 
-      ModifiedMovementSpeed = baseMovementSpeed;
-      ModifiedJumpStrength = baseJumpStrength;
-
       animIsMoving = Animator.StringToHash("IsMoving");
       animIsJumping = Animator.StringToHash("IsJumping");
       animHorizontal = Animator.StringToHash("Horizontal");
       animVertical = Animator.StringToHash("Vertical");
+
+      OnValidate();
     }
 
     protected virtual void Update()
@@ -72,6 +71,7 @@ namespace Fralle.FpsController
       if (IsLocked)
         return;
 
+      ResetJumpingFlag();
       desiredForce = Orientation.right * Movement.x + Orientation.forward * Movement.y;
 
       Move();
@@ -83,9 +83,7 @@ namespace Fralle.FpsController
       GravityAdjuster();
       LimitSpeed();
       SlopeControl();
-
-      if (IsGrounded)
-        StickToGroundHelper();
+      StickToGroundHelper();
 
       GroundChange();
       ResetGroundVariables();
@@ -118,7 +116,7 @@ namespace Fralle.FpsController
     void OnValidate()
     {
       ModifiedMovementSpeed = baseMovementSpeed;
-      ModifiedJumpStrength = baseJumpStrength;
+      ModifiedJumpHeight = jumpHeight;
     }
   }
 }

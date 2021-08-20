@@ -6,7 +6,7 @@ namespace Fralle.FpsController
   {
     void StickToGroundHelper()
     {
-      if (Mathf.Abs(SlopeAngle) >= maxAngleWalkable)
+      if (shouldNotBeGrounded)
         return;
 
       RigidBody.velocity = Vector3.ProjectOnPlane(RigidBody.velocity, GroundContactNormal);

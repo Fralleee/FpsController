@@ -9,13 +9,13 @@ namespace Fralle.FpsController
 
     [Header("Crouching")]
     [SerializeField] float crouchingSpeed = 8f;
-    [SerializeField] float crouchHeight = 1f;
-
-    protected bool crouchButton;
 
     Vector3 crouchingScale;
     Vector3 defaultScale;
+    protected bool crouchButton;
+    bool extraCrouchBoost;
     float roofCheckHeight;
+    float crouchHeight = 1f;
 
     void Crouch()
     {
@@ -24,7 +24,12 @@ namespace Fralle.FpsController
         if (!IsCrouching)
         {
           OnCrouchStateChanged(true);
-          Body.GetComponent<Rigidbody>().AddForce(Vector3.up * 2f, ForceMode.VelocityChange);
+
+          if (extraCrouchBoost)
+          {
+            RigidBody.AddForce(Vector3.up * Mathf.Sqrt(-2f * Physics.gravity.y * gravityModifier * 0.5f), ForceMode.VelocityChange);
+            extraCrouchBoost = false;
+          }
         }
 
         IsCrouching = true;

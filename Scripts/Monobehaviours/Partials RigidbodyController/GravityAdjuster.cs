@@ -5,7 +5,7 @@ namespace Fralle.FpsController
   public partial class RigidbodyController : MonoBehaviour
   {
     [Header("Gravity adjuster")]
-    [SerializeField] float gravityModifier = 2f;
+    public float gravityModifier = 2f;
 
     void GravityAdjuster()
     {

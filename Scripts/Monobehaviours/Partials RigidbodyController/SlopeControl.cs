@@ -11,24 +11,29 @@ namespace Fralle.FpsController
     [SerializeField] float maxAngleWalkable = 35;
     [SerializeField] float maxAngleGrounded = 45;
 
+    bool shouldSlide => SlopeAngle > maxAngleWalkable + 1;
+    bool shouldNotBeGrounded => SlopeAngle > maxAngleGrounded + 1;
+
     void SlopeControl()
     {
-      RigidBody.useGravity = true;
+      if (!IsGrounded)
+        return;
 
-      if (IsGrounded)
+      if (shouldSlide)
       {
-        bool shouldSlideDown = SlopeAngle > maxAngleWalkable + 1;
-        RigidBody.useGravity = shouldSlideDown;
-
-        if (shouldSlideDown)
+        Vector3 downSlopeForce = Vector3.ProjectOnPlane(Physics.gravity * gravityModifier, GroundContactNormal);
+        if (shouldNotBeGrounded)
         {
-          Vector3 downSlopeForce = Vector3.ProjectOnPlane(Physics.gravity, GroundContactNormal);
-          RigidBody.AddForce(downSlopeForce * 5f);
-
-          bool shouldNotBeGrounded = SlopeAngle > maxAngleGrounded + 1;
-          if (shouldNotBeGrounded)
-            IsGrounded = false;
+          IsGrounded = false;
+          RigidBody.AddForce(downSlopeForce * ModifiedMovementSpeed * 2f);
         }
+        else
+          RigidBody.AddForce(downSlopeForce * ModifiedMovementSpeed);
+      }
+      else
+      {
+        Vector3 upSlopeForce = Vector3.ProjectOnPlane(-Physics.gravity, GroundContactNormal);
+        RigidBody.AddForce(upSlopeForce);
       }
     }
   }
