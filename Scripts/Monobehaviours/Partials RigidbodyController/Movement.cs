@@ -18,12 +18,12 @@ namespace Fralle.FpsController
 
     void Move()
     {
-      if (IsGrounded)
+      if (isGrounded)
       {
         GroundMove();
-        IsMoving = desiredForce.magnitude > 0; // also check if not blocked
+        isMoving = desiredForce.magnitude > 0; // also check if not blocked
 
-        animator.SetBool(animIsMoving, IsMoving);
+        Animator.SetBool(AnimIsMoving, isMoving);
       }
       else
         AirMove();
@@ -31,24 +31,24 @@ namespace Fralle.FpsController
 
     void GroundMove()
     {
-      RigidBody.AddForce(desiredForce * ModifiedMovementSpeed, ForceMode.Impulse);
+      rigidBody.AddForce(desiredForce * ModifiedMovementSpeed, ForceMode.Impulse);
       StoppingForcesGround();
     }
 
     void AirMove()
     {
-      RigidBody.AddForce(desiredForce * ModifiedMovementSpeed * airControl, ForceMode.Impulse);
+      rigidBody.AddForce(desiredForce * ModifiedMovementSpeed * airControl, ForceMode.Impulse);
       StoppingForcesAir();
     }
 
     void StoppingForcesGround()
     {
-      RigidBody.velocity = Vector3.SmoothDamp(RigidBody.velocity, Vector3.zero, ref damp, stopTime);
+      rigidBody.velocity = Vector3.SmoothDamp(rigidBody.velocity, Vector3.zero, ref damp, stopTime);
     }
 
     void StoppingForcesAir()
     {
-      RigidBody.velocity = Vector3.SmoothDamp(RigidBody.velocity, Vector3.zero, ref damp, stopTime).With(y: RigidBody.velocity.y);
+      rigidBody.velocity = Vector3.SmoothDamp(rigidBody.velocity, Vector3.zero, ref damp, stopTime).With(y: rigidBody.velocity.y);
     }
   }
 }

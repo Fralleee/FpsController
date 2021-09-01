@@ -9,7 +9,7 @@ namespace Fralle.FpsController
       if (shouldNotBeGrounded)
         return;
 
-      RigidBody.velocity = Vector3.ProjectOnPlane(RigidBody.velocity, GroundContactNormal);
+      rigidBody.velocity = Vector3.ProjectOnPlane(rigidBody.velocity, groundContactNormal);
     }
   }
 }

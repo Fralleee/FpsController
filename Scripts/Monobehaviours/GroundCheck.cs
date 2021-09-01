@@ -19,7 +19,7 @@ public class GroundCheck : MonoBehaviour
 
   void OnCollisionStay(Collision collision)
   {
-    if (rigidbodyController.IsJumping)
+    if (rigidbodyController.isJumping)
       return;
 
     contacts = collision.contacts;
@@ -28,9 +28,9 @@ public class GroundCheck : MonoBehaviour
       Vector3 dir = curve - contactPoint.point;
       if (dir.y > 0f || contactPoint.normal.y > 0.01f)
       {
-        rigidbodyController.GroundContactNormal = contactPoint.normal;
-        rigidbodyController.SlopeAngle = Mathf.Min(rigidbodyController.SlopeAngle, Vector3.Angle(contactPoint.normal, Vector3.up));
-        rigidbodyController.IsGrounded = true;
+        rigidbodyController.groundContactNormal = contactPoint.normal;
+        rigidbodyController.slopeAngle = Mathf.Min(rigidbodyController.slopeAngle, Vector3.Angle(contactPoint.normal, Vector3.up));
+        rigidbodyController.isGrounded = true;
       }
     }
   }

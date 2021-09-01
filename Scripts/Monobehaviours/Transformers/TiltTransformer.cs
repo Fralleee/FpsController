@@ -24,7 +24,7 @@ namespace Fralle.FpsController
     public Quaternion GetRotation() => currentRotation;
     public override void Calculate()
     {
-      if (playerController.IsMoving && !playerController.Movement.x.EqualsWithTolerance(0f))
+      if (playerController.isMoving && !playerController.Movement.x.EqualsWithTolerance(0f))
       {
         float strafeAmount = Mathf.Clamp(-playerController.Movement.x * strafeRotationAmount, -maxStrafeRotation, maxStrafeRotation);
         Quaternion strafeRot = Quaternion.Euler(new Vector3(0f, 0f, strafeAmount));

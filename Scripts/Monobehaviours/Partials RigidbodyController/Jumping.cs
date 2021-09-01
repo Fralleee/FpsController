@@ -19,29 +19,29 @@ namespace Fralle.FpsController
     void Jumping()
     {
       queueJump = false;
-      IsJumping = true;
-      IsGrounded = false;
+      isJumping = true;
+      isGrounded = false;
       extraCrouchBoost = true;
 
       CancelVelocityOnJump();
-      RigidBody.AddForce(Vector3.up * Mathf.Sqrt(-2f * Physics.gravity.y * gravityModifier * ModifiedJumpHeight), ForceMode.VelocityChange);
+      rigidBody.AddForce(Vector3.up * Mathf.Sqrt(-2f * Physics.gravity.y * gravityModifier * ModifiedJumpHeight), ForceMode.VelocityChange);
 
       OnGroundLeave();
     }
 
     void ResetJumpingFlag()
     {
-      if (IsJumping && RigidBody.velocity.y <= 0)
+      if (isJumping && rigidBody.velocity.y <= 0)
       {
-        IsJumping = false;
+        isJumping = false;
         extraCrouchBoost = false;
       }
     }
 
     void CancelVelocityOnJump()
     {
-      if (RigidBody.velocity.y > 0f)
-        RigidBody.AddForce(Vector3.up * -RigidBody.velocity.y, ForceMode.VelocityChange);
+      if (rigidBody.velocity.y > 0f)
+        rigidBody.AddForce(Vector3.up * -rigidBody.velocity.y, ForceMode.VelocityChange);
     }
   }
 }

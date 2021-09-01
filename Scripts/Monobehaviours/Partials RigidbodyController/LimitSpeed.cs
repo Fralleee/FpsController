@@ -7,12 +7,12 @@ namespace Fralle.FpsController
 
     void LimitSpeed()
     {
-      Vector3 horizontalMovement = new Vector3(RigidBody.velocity.x, 0, RigidBody.velocity.z);
+      Vector3 horizontalMovement = new Vector3(rigidBody.velocity.x, 0, rigidBody.velocity.z);
       if (horizontalMovement.magnitude <= ModifiedMovementSpeed)
         return;
 
       horizontalMovement = horizontalMovement.normalized * ModifiedMovementSpeed;
-      RigidBody.velocity = new Vector3(horizontalMovement.x, RigidBody.velocity.y, horizontalMovement.z);
+      rigidBody.velocity = new Vector3(horizontalMovement.x, rigidBody.velocity.y, horizontalMovement.z);
     }
   }
 }

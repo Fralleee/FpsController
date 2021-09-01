@@ -7,47 +7,71 @@ namespace Fralle.FpsController
   {
     public event Action<bool> OnCrouchStateChanged = delegate { };
 
-    [Header("Crouching")]
-    [SerializeField] float crouchingSpeed = 8f;
+    protected bool CrouchButton;
 
-    Vector3 crouchingScale;
-    Vector3 defaultScale;
-    protected bool crouchButton;
+    Collider[] overlappedColliders = new Collider[8];
     bool extraCrouchBoost;
-    float roofCheckHeight;
-    float crouchHeight = 1f;
 
     void Crouch()
     {
-      if (crouchButton)
+      switch (CrouchButton)
       {
-        if (!IsCrouching)
-        {
-          OnCrouchStateChanged(true);
-
-          if (extraCrouchBoost)
-          {
-            RigidBody.AddForce(Vector3.up * Mathf.Sqrt(-2f * Physics.gravity.y * gravityModifier * 0.5f), ForceMode.VelocityChange);
-            extraCrouchBoost = false;
-          }
-        }
-
-        IsCrouching = true;
-        if (Body.localScale != crouchingScale)
-        {
-          Body.localScale = Vector3.Lerp(Body.localScale, crouchingScale, Time.deltaTime * crouchingSpeed);
-        }
-      }
-      else if (IsCrouching && !Physics.Raycast(transform.position, Vector3.up, roofCheckHeight, groundLayers))
-      {
-        IsCrouching = false;
-        OnCrouchStateChanged(false);
-      }
-
-      if (!IsCrouching && Body.localScale != defaultScale)
-      {
-        Body.localScale = Vector3.Lerp(Body.localScale, defaultScale, Time.deltaTime * crouchingSpeed);
+        case true when !isCrouching:
+          StartCrouch();
+          break;
+        case false when isCrouching:
+          EndCrouch();
+          break;
       }
     }
+
+    void StartCrouch()
+    {
+      isCrouching = true;
+      SetCapsuleDimensions(0.5f, 1f, 0.5f);
+      Model.localScale = new Vector3(1f, 0.5f, 1f);
+
+
+      if (extraCrouchBoost)
+      {
+        rigidBody.AddForce(Vector3.up * Mathf.Sqrt(-2f * Physics.gravity.y * gravityModifier * 0.5f), ForceMode.VelocityChange);
+        extraCrouchBoost = false;
+      }
+
+      OnCrouchStateChanged(true);
+    }
+
+    void EndCrouch()
+    {
+      SetCapsuleDimensions(0.5f, 2f, 1f);
+      if (CharacterCollisionsOverlap())
+      {
+        SetCapsuleDimensions(0.5f, 2f, 1f);
+        return;
+      }
+
+      Model.localScale = Vector3.one;
+      isCrouching = false;
+      OnCrouchStateChanged(false);
+    }
+
+    void SetCapsuleDimensions(float radius, float height, float yOffset)
+    {
+      capsule.radius = radius;
+      capsule.height = Mathf.Clamp(height, radius * 2f, height);
+      capsule.center = new Vector3(0f, yOffset, 0f);
+    }
+
+    bool CharacterCollisionsOverlap()
+    {
+      Vector3 position = body.position;
+      Bounds bounds = capsule.bounds;
+      Vector3 bottom = position + bounds.center - (Vector3.up * bounds.extents.y);
+      Vector3 top = position + bounds.center + (Vector3.up * bounds.extents.y);
+
+      int hits = Physics.OverlapCapsuleNonAlloc(bottom, top, capsule.radius, overlappedColliders, DefaultLayer, QueryTriggerInteraction.Ignore);
+      return hits > 0;
+    }
+
   }
 }

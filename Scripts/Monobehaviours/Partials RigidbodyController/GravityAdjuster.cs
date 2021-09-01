@@ -9,10 +9,10 @@ namespace Fralle.FpsController
 
     void GravityAdjuster()
     {
-      if (IsGrounded)
+      if (isGrounded)
         return;
 
-      RigidBody.velocity += Physics.gravity * (gravityModifier - 1) * Time.fixedDeltaTime;
+      rigidBody.velocity += Physics.gravity * (gravityModifier - 1) * Time.fixedDeltaTime;
     }
   }
 }

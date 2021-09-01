@@ -1,65 +1,68 @@
 using Fralle.Core;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Fralle.FpsController
 {
   public partial class RigidbodyController : MonoBehaviour
   {
+    [FormerlySerializedAs("Camera")]
     [Header("Setup")]
-    public Camera Camera;
-    public Transform CameraRig;
-    public Transform Orientation;
-    public Transform Body;
+    public Camera camera;
+    [FormerlySerializedAs("CameraRig")] public Transform cameraRig;
+    [FormerlySerializedAs("Orientation")] public Transform orientation;
+    [FormerlySerializedAs("Body")] public Transform body;
     [SerializeField] LayerMask groundLayers;
-    [HideInInspector] public Rigidbody RigidBody;
-    [HideInInspector] public CapsuleCollider Capsule;
+    [FormerlySerializedAs("RigidBody")] [HideInInspector] public Rigidbody rigidBody;
+    [FormerlySerializedAs("Capsule")] [HideInInspector] public CapsuleCollider capsule;
 
+    [FormerlySerializedAs("IsLocked")]
     [Header("Status")]
-    [Readonly] public bool IsLocked;
-    [Readonly] public bool IsGrounded;
-    [Readonly] public bool IsMoving;
-    [Readonly] public bool IsJumping;
-    [Readonly] public bool IsCrouching;
-    [Readonly] public float SlopeAngle;
-    [Readonly] public Vector3 GroundContactNormal;
-    [Readonly] public bool PreviouslyGrounded;
+    [Readonly] public bool isLocked;
+    [FormerlySerializedAs("IsGrounded")] [Readonly] public bool isGrounded;
+    [FormerlySerializedAs("IsMoving")] [Readonly] public bool isMoving;
+    [FormerlySerializedAs("IsJumping")] [Readonly] public bool isJumping;
+    [FormerlySerializedAs("IsCrouching")] [Readonly] public bool isCrouching;
+    [FormerlySerializedAs("SlopeAngle")] [Readonly] public float slopeAngle;
+    [FormerlySerializedAs("GroundContactNormal")] [Readonly] public Vector3 groundContactNormal;
+    [FormerlySerializedAs("PreviouslyGrounded")] [Readonly] public bool previouslyGrounded;
 
-    protected Animator animator;
-    protected int animIsMoving;
-    protected int animIsJumping;
-    protected int animHorizontal;
-    protected int animVertical;
+    protected Animator Animator;
+    protected Transform Model;
+    protected int AnimIsMoving;
+    protected int AnimIsJumping;
+    protected int AnimHorizontal;
+    protected int AnimVertical;
+    protected int DefaultLayer;
 
     protected virtual void Awake()
     {
-      RigidBody = Body.GetComponent<Rigidbody>();
-      Capsule = Body.GetComponent<CapsuleCollider>();
-      animator = Body.GetComponentInChildren<Animator>();
+      DefaultLayer = LayerMask.NameToLayer("Default");
 
-      defaultScale = Body.localScale;
-      crouchingScale = new Vector3(1, 0.5f, 1);
-      crouchHeight = Capsule.height * crouchingScale.y * Body.localScale.y;
-      roofCheckHeight = Capsule.height - crouchHeight * 0.5f - 0.01f;
+      rigidBody = body.GetComponent<Rigidbody>();
+      capsule = body.GetComponent<CapsuleCollider>();
+      Animator = body.GetComponentInChildren<Animator>();
+      Model = body.Find("Model").transform;
 
-      if (!Camera)
-        Camera = Camera.main;
+      if (!camera)
+        camera = Camera.main;
 
-      rotationTransformer = CameraRig.GetComponent<LookRotationTransformer>();
+      rotationTransformer = cameraRig.GetComponent<LookRotationTransformer>();
 
-      animIsMoving = Animator.StringToHash("IsMoving");
-      animIsJumping = Animator.StringToHash("IsJumping");
-      animHorizontal = Animator.StringToHash("Horizontal");
-      animVertical = Animator.StringToHash("Vertical");
+      AnimIsMoving = Animator.StringToHash("IsMoving");
+      AnimIsJumping = Animator.StringToHash("IsJumping");
+      AnimHorizontal = Animator.StringToHash("Horizontal");
+      AnimVertical = Animator.StringToHash("Vertical");
 
       OnValidate();
     }
 
     protected virtual void Update()
     {
-      if (IsLocked)
+      if (isLocked)
         return;
 
-      if (IsGrounded && jumpButton && !IsJumping)
+      if (isGrounded && jumpButton && !isJumping)
       {
         jumpButton = false;
         queueJump = true;
@@ -68,11 +71,11 @@ namespace Fralle.FpsController
 
     protected virtual void FixedUpdate()
     {
-      if (IsLocked)
+      if (isLocked)
         return;
 
       ResetJumpingFlag();
-      desiredForce = Orientation.right * Movement.x + Orientation.forward * Movement.y;
+      desiredForce = orientation.right * Movement.x + orientation.forward * Movement.y;
 
       Move();
       Crouch();
@@ -91,21 +94,21 @@ namespace Fralle.FpsController
 
     void GroundChange()
     {
-      if (PreviouslyGrounded != IsGrounded)
-        animator.SetBool(animIsJumping, !IsGrounded);
+      if (previouslyGrounded != isGrounded)
+        Animator.SetBool(AnimIsJumping, !isGrounded);
 
-      if (IsGrounded && !PreviouslyGrounded)
+      if (isGrounded && !previouslyGrounded)
       {
-        OnGroundEnter(RigidBody.velocity.y);
+        OnGroundEnter(rigidBody.velocity.y);
       }
 
-      PreviouslyGrounded = IsGrounded;
+      previouslyGrounded = isGrounded;
     }
 
     public void ResetGroundVariables()
     {
-      IsGrounded = false;
-      SlopeAngle = 90;
+      isGrounded = false;
+      slopeAngle = 90;
     }
 
     void LateUpdate()

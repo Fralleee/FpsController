@@ -28,8 +28,8 @@ namespace Fralle.FpsController
       currentRotationX = Mathf.SmoothDamp(currentRotationX, mouseCoords.x, ref mouseLookDampX, smoothTime);
       currentRotationY = Mathf.SmoothDamp(currentRotationY, mouseCoords.y, ref mouseLookDampY, smoothTime);
 
-      Vector3 rot = Orientation.transform.rotation.eulerAngles;
-      Orientation.transform.localRotation = Quaternion.Euler(rot.x, currentRotationX, rot.z);
+      Vector3 rot = orientation.transform.rotation.eulerAngles;
+      orientation.transform.localRotation = Quaternion.Euler(rot.x, currentRotationX, rot.z);
       rotationTransformer.ApplyLookRotation(Quaternion.Euler(currentRotationY, currentRotationX, 0));
     }
   }
