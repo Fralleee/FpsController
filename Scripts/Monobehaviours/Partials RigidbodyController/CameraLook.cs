@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Fralle.FpsController
 {
-  public partial class RigidbodyController : MonoBehaviour
+  public partial class RigidbodyController
   {
     [Header("Mouse look")]
     [SerializeField] float mouseSensitivity = 3f;

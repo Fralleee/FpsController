@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Fralle.FpsController
 {
-  public partial class RigidbodyController : MonoBehaviour
+  public partial class RigidbodyController
   {
     public event Action<bool> OnCrouchStateChanged = delegate { };
 
@@ -66,10 +66,10 @@ namespace Fralle.FpsController
     {
       Vector3 position = body.position;
       Bounds bounds = capsule.bounds;
-      Vector3 bottom = position + bounds.center - (Vector3.up * bounds.extents.y);
-      Vector3 top = position + bounds.center + (Vector3.up * bounds.extents.y);
+      Vector3 bottom = position + bounds.center - Vector3.up * bounds.extents.y;
+      Vector3 top = position + bounds.center + Vector3.up * bounds.extents.y;
 
-      int hits = Physics.OverlapCapsuleNonAlloc(bottom, top, capsule.radius, overlappedColliders, DefaultLayer, QueryTriggerInteraction.Ignore);
+      int hits = Physics.OverlapCapsuleNonAlloc(bottom, top, capsule.radius, overlappedColliders, groundLayers, QueryTriggerInteraction.Ignore);
       return hits > 0;
     }
 

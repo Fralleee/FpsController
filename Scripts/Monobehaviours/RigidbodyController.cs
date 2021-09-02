@@ -7,7 +7,7 @@ namespace Fralle.FpsController
   public partial class RigidbodyController : MonoBehaviour
   {
     [Header("Setup")]
-    public Camera camera;
+    public new Camera camera;
     public Transform cameraRig;
     public Transform orientation;
     public Transform body;
@@ -32,12 +32,9 @@ namespace Fralle.FpsController
     protected int AnimIsJumping;
     protected int AnimHorizontal;
     protected int AnimVertical;
-    protected int DefaultLayer;
 
     protected virtual void Awake()
     {
-      DefaultLayer = LayerMask.NameToLayer("Default");
-
       rigidBody = body.GetComponent<Rigidbody>();
       capsule = body.GetComponent<CapsuleCollider>();
       Animator = body.GetComponentInChildren<Animator>();
@@ -61,11 +58,11 @@ namespace Fralle.FpsController
       if (isLocked)
         return;
 
-      if (isGrounded && jumpButton && !isJumping)
-      {
-        jumpButton = false;
-        queueJump = true;
-      }
+      if (!isGrounded || !JumpButton || isJumping)
+        return;
+
+      JumpButton = false;
+      queueJump = true;
     }
 
     protected virtual void FixedUpdate()
@@ -96,11 +93,6 @@ namespace Fralle.FpsController
       if (previouslyGrounded != isGrounded)
         Animator.SetBool(AnimIsJumping, !isGrounded);
 
-      if (isGrounded && !previouslyGrounded)
-      {
-        OnGroundEnter(rigidBody.velocity.y);
-      }
-
       previouslyGrounded = isGrounded;
     }
 
@@ -117,8 +109,8 @@ namespace Fralle.FpsController
 
     void OnValidate()
     {
-      ModifiedMovementSpeed = baseMovementSpeed;
-      ModifiedJumpHeight = jumpHeight;
+      modifiedMovementSpeed = baseMovementSpeed;
+      modifiedJumpHeight = jumpHeight;
     }
   }
 }

@@ -1,34 +1,31 @@
-using System;
 using UnityEngine;
 
 namespace Fralle.FpsController
 {
-  public partial class RigidbodyController : MonoBehaviour
+  public partial class RigidbodyController
   {
-    public event Action<float> OnGroundEnter = delegate { };
-
     [Header("Ground Control")]
     [SerializeField] float maxAngleWalkable = 35;
     [SerializeField] float maxAngleGrounded = 45;
 
-    bool shouldSlide => slopeAngle > maxAngleWalkable + 1;
-    bool shouldNotBeGrounded => slopeAngle > maxAngleGrounded + 1;
+    bool ShouldSlide => slopeAngle > maxAngleWalkable + 1;
+    bool ShouldNotBeGrounded => slopeAngle > maxAngleGrounded + 1;
 
     void SlopeControl()
     {
       if (!isGrounded)
         return;
 
-      if (shouldSlide)
+      if (ShouldSlide)
       {
         Vector3 downSlopeForce = Vector3.ProjectOnPlane(Physics.gravity * gravityModifier, groundContactNormal);
-        if (shouldNotBeGrounded)
+        if (ShouldNotBeGrounded)
         {
           isGrounded = false;
-          rigidBody.AddForce(downSlopeForce * ModifiedMovementSpeed * 2f);
+          rigidBody.AddForce(downSlopeForce * modifiedMovementSpeed * 2f);
         }
         else
-          rigidBody.AddForce(downSlopeForce * ModifiedMovementSpeed);
+          rigidBody.AddForce(downSlopeForce * modifiedMovementSpeed);
       }
       else
       {

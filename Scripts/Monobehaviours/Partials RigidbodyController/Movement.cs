@@ -1,16 +1,17 @@
 using Fralle.Core;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Fralle.FpsController
 {
-  public partial class RigidbodyController : MonoBehaviour
+  public partial class RigidbodyController
   {
     [Header("Movement")]
     [SerializeField] float baseMovementSpeed = 4f;
     [SerializeField] float stopTime = 0.05f;
     [SerializeField] float airControl = 0.5f;
-    [ReadOnly] public float ModifiedMovementSpeed;
+    [FormerlySerializedAs("ModifiedMovementSpeed")] [ReadOnly] public float modifiedMovementSpeed;
 
     public Vector2 Movement { get; protected set; }
 
@@ -32,13 +33,13 @@ namespace Fralle.FpsController
 
     void GroundMove()
     {
-      rigidBody.AddForce(desiredForce * ModifiedMovementSpeed, ForceMode.Impulse);
+      rigidBody.AddForce(desiredForce * modifiedMovementSpeed, ForceMode.Impulse);
       StoppingForcesGround();
     }
 
     void AirMove()
     {
-      rigidBody.AddForce(desiredForce * ModifiedMovementSpeed * airControl, ForceMode.Impulse);
+      rigidBody.AddForce(desiredForce * modifiedMovementSpeed * airControl, ForceMode.Impulse);
       StoppingForcesAir();
     }
 

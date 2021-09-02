@@ -1,18 +1,19 @@
 using Sirenix.OdinInspector;
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Fralle.FpsController
 {
-  public partial class RigidbodyController : MonoBehaviour
+  public partial class RigidbodyController
   {
     public event Action OnGroundLeave = delegate { };
 
     [Header("Jumping")]
     [SerializeField] float jumpHeight = 2f;
-    [ReadOnly] public float ModifiedJumpHeight;
+    [FormerlySerializedAs("ModifiedJumpHeight")] [ReadOnly] public float modifiedJumpHeight;
 
-    protected bool jumpButton;
+    protected bool JumpButton;
 
     public bool queueJump;
 
@@ -24,18 +25,18 @@ namespace Fralle.FpsController
       extraCrouchBoost = true;
 
       CancelVelocityOnJump();
-      rigidBody.AddForce(Vector3.up * Mathf.Sqrt(-2f * Physics.gravity.y * gravityModifier * ModifiedJumpHeight), ForceMode.VelocityChange);
+      rigidBody.AddForce(Vector3.up * Mathf.Sqrt(-2f * Physics.gravity.y * gravityModifier * modifiedJumpHeight), ForceMode.VelocityChange);
 
       OnGroundLeave();
     }
 
     void ResetJumpingFlag()
     {
-      if (isJumping && rigidBody.velocity.y <= 0)
-      {
-        isJumping = false;
-        extraCrouchBoost = false;
-      }
+      if (!isJumping || !(rigidBody.velocity.y <= 0))
+        return;
+
+      isJumping = false;
+      extraCrouchBoost = false;
     }
 
     void CancelVelocityOnJump()

@@ -16,10 +16,10 @@ namespace Fralle.FpsController
     int animIsMoving;
     int animVelocity;
 
-    public float speed { get => navMeshAgent.speed; set { navMeshAgent.speed = value; } }
-    public float stoppingDistance { get => navMeshAgent.stoppingDistance; set { navMeshAgent.stoppingDistance = value; } }
-    public float remainingDistance => navMeshAgent.remainingDistance;
-    public Vector3 velocity => navMeshAgent.velocity;
+    public float Speed { get => navMeshAgent.speed; set => navMeshAgent.speed = value; }
+    public float StoppingDistance { get => navMeshAgent.stoppingDistance; set => navMeshAgent.stoppingDistance = value; }
+    public float RemainingDistance => navMeshAgent.remainingDistance;
+    public Vector3 Velocity => navMeshAgent.velocity;
 
     public void SetDestination(Vector3 target)
     {

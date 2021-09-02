@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Fralle.FpsController
 {
-  public partial class RigidbodyController : MonoBehaviour
+  public partial class RigidbodyController
   {
     [Header("Gravity adjuster")]
     public float gravityModifier = 2f;
