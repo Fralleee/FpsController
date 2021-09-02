@@ -1,4 +1,5 @@
 using Fralle.Core;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Fralle.FpsController
@@ -9,7 +10,7 @@ namespace Fralle.FpsController
     [SerializeField] float baseMovementSpeed = 4f;
     [SerializeField] float stopTime = 0.05f;
     [SerializeField] float airControl = 0.5f;
-    [Readonly] public float ModifiedMovementSpeed;
+    [ReadOnly] public float ModifiedMovementSpeed;
 
     public Vector2 Movement { get; protected set; }
 

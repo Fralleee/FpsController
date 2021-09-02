@@ -1,31 +1,30 @@
 using Fralle.Core;
+using Sirenix.OdinInspector;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Fralle.FpsController
 {
   public partial class RigidbodyController : MonoBehaviour
   {
-    [FormerlySerializedAs("Camera")]
     [Header("Setup")]
     public Camera camera;
-    [FormerlySerializedAs("CameraRig")] public Transform cameraRig;
-    [FormerlySerializedAs("Orientation")] public Transform orientation;
-    [FormerlySerializedAs("Body")] public Transform body;
+    public Transform cameraRig;
+    public Transform orientation;
+    public Transform body;
     [SerializeField] LayerMask groundLayers;
-    [FormerlySerializedAs("RigidBody")] [HideInInspector] public Rigidbody rigidBody;
-    [FormerlySerializedAs("Capsule")] [HideInInspector] public CapsuleCollider capsule;
+    [HideInInspector] public Rigidbody rigidBody;
+    [HideInInspector] public CapsuleCollider capsule;
 
-    [FormerlySerializedAs("IsLocked")]
+
     [Header("Status")]
-    [Readonly] public bool isLocked;
-    [FormerlySerializedAs("IsGrounded")] [Readonly] public bool isGrounded;
-    [FormerlySerializedAs("IsMoving")] [Readonly] public bool isMoving;
-    [FormerlySerializedAs("IsJumping")] [Readonly] public bool isJumping;
-    [FormerlySerializedAs("IsCrouching")] [Readonly] public bool isCrouching;
-    [FormerlySerializedAs("SlopeAngle")] [Readonly] public float slopeAngle;
-    [FormerlySerializedAs("GroundContactNormal")] [Readonly] public Vector3 groundContactNormal;
-    [FormerlySerializedAs("PreviouslyGrounded")] [Readonly] public bool previouslyGrounded;
+    [ReadOnly] public bool isLocked;
+    [ReadOnly] public bool isGrounded;
+    [ReadOnly] public bool isMoving;
+    [ReadOnly] public bool isJumping;
+    [ReadOnly] public bool isCrouching;
+    [ReadOnly] public float slopeAngle;
+    [ReadOnly] public Vector3 groundContactNormal;
+    [ReadOnly] public bool previouslyGrounded;
 
     protected Animator Animator;
     protected Transform Model;

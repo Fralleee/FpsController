@@ -3,7 +3,8 @@
     "rootNamespace": "Fralle.FpsController",
     "references": [
         "Unity.InputSystem",
-        "Fralle.Core"
+        "Fralle.Core",
+        "Sirenix.OdinInspector.CompatibilityLayer"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
