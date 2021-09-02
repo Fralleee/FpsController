@@ -1,7 +1,6 @@
 using Sirenix.OdinInspector;
 using System;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Fralle.FpsController
 {
@@ -11,7 +10,7 @@ namespace Fralle.FpsController
 
     [Header("Jumping")]
     [SerializeField] float jumpHeight = 2f;
-    [FormerlySerializedAs("ModifiedJumpHeight")] [ReadOnly] public float modifiedJumpHeight;
+    [ReadOnly] public float modifiedJumpHeight;
 
     protected bool JumpButton;
 
