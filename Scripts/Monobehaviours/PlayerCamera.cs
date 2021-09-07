@@ -1,5 +1,6 @@
 using Fralle.Core;
 using Fralle.FpsController;
+using System.Collections;
 using UnityEngine;
 
 public class PlayerCamera : MasterPositioner
@@ -7,16 +8,17 @@ public class PlayerCamera : MasterPositioner
   public Transform playerTransform;
   public RigidbodyController controller;
 
+  Coroutine lerp;
   Vector3 lastOffset;
   Vector3 currentOffset;
   Vector3 desiredOffset;
 
-  float lerpDuration;
-  float timeElapsed;
-
-  public void SetOffset(Vector3 offset, float time = 0.5f)
+  public void SetOffset(Vector3 offset, float duration = 0.5f)
   {
-    if (time == 0f)
+    if (lerp != null)
+      StopCoroutine(lerp);
+
+    if (duration == 0f)
     {
       currentOffset = offset;
       return;
@@ -24,19 +26,23 @@ public class PlayerCamera : MasterPositioner
 
     lastOffset = currentOffset;
     desiredOffset = offset;
-    lerpDuration = time;
-    timeElapsed = 0;
+    lerp = StartCoroutine(Lerp(duration));
   }
 
   public override Vector3 GetPosition() => playerTransform.position + currentOffset;
 
-  private void Update()
+  IEnumerator Lerp(float lerpDuration)
   {
-    if (timeElapsed < lerpDuration)
+    float timeElapsed = 0;
+    while (timeElapsed < lerpDuration)
     {
       currentOffset = Vector3.Slerp(lastOffset, desiredOffset, timeElapsed / lerpDuration);
       timeElapsed += Time.deltaTime;
+
+      yield return null;
     }
+
+    currentOffset = desiredOffset;
   }
 
 }
