@@ -7,18 +7,18 @@ namespace Fralle.FpsController
   public partial class RigidbodyController : MonoBehaviour
   {
     [Header("Setup")]
-    public new Camera camera;
-    public Transform cameraRig;
-    public Transform orientation;
-    public Transform body;
     [SerializeField] LayerMask groundLayers;
+
+    [HideInInspector] public new Camera camera;
+    [HideInInspector] public PlayerCamera playerCamera;
+    [HideInInspector] public Transform cameraRig;
     [HideInInspector] public Rigidbody rigidBody;
     [HideInInspector] public CapsuleCollider capsule;
-
 
     [Header("Status")]
     [ReadOnly] public bool isLocked;
     [ReadOnly] public bool isGrounded;
+    [ReadOnly] public bool isStable;
     [ReadOnly] public bool isMoving;
     [ReadOnly] public bool isJumping;
     [ReadOnly] public bool isCrouching;
@@ -35,14 +35,16 @@ namespace Fralle.FpsController
 
     protected virtual void Awake()
     {
-      rigidBody = body.GetComponent<Rigidbody>();
-      capsule = body.GetComponent<CapsuleCollider>();
-      Animator = body.GetComponentInChildren<Animator>();
-      Model = body.Find("Model").transform;
+      rigidBody = GetComponent<Rigidbody>();
+      capsule = GetComponent<CapsuleCollider>();
+      Animator = GetComponentInChildren<Animator>();
+      Model = transform.Find("Model").transform;
 
-      if (!camera)
-        camera = Camera.main;
-
+      playerCamera = FindObjectOfType<PlayerCamera>();
+      playerCamera.controller = this;
+      playerCamera.SetOffset(standOffset, 0f);
+      cameraRig = playerCamera.transform;
+      camera = cameraRig.GetComponentInChildren<Camera>();
       rotationTransformer = cameraRig.GetComponent<LookRotationTransformer>();
 
       AnimIsMoving = Animator.StringToHash("IsMoving");
@@ -63,6 +65,7 @@ namespace Fralle.FpsController
 
       JumpButton = false;
       queueJump = true;
+
     }
 
     protected virtual void FixedUpdate()
@@ -70,19 +73,19 @@ namespace Fralle.FpsController
       if (isLocked)
         return;
 
-      ResetJumpingFlag();
-      desiredForce = orientation.right * Movement.x + orientation.forward * Movement.y;
+      isStable = false;
 
-      Move();
+      ResetJumpingFlag();
+      SlopeControl();
+
       Crouch();
+      Move();
 
       if (queueJump)
         Jumping();
 
       GravityAdjuster();
       LimitSpeed();
-      SlopeControl();
-      StickToGroundHelper();
 
       GroundChange();
       ResetGroundVariables();

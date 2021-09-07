@@ -18,7 +18,7 @@ namespace Fralle.FpsController
 
     void Awake()
     {
-      playerController = GetComponentInParent<RigidbodyController>();
+      playerController = GetComponentInParent<PlayerCamera>().controller;
     }
 
     public Quaternion GetRotation() => currentRotation;

@@ -40,8 +40,7 @@ namespace Fralle.FpsController
 
     void CancelVelocityOnJump()
     {
-      if (rigidBody.velocity.y > 0f)
-        rigidBody.AddForce(Vector3.up * -rigidBody.velocity.y, ForceMode.VelocityChange);
+      rigidBody.AddForce(Vector3.up * -rigidBody.velocity.y, ForceMode.VelocityChange);
     }
   }
 }
