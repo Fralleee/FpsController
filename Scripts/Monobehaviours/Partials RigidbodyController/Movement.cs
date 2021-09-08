@@ -9,7 +9,7 @@ namespace Fralle.FpsController
     [SerializeField] float maxMovementSpeed = 7f;
     [SerializeField] float crouchModifier = 0.5f;
     [SerializeField] float groundAcceleration = 7f;
-    [SerializeField] float airAcceleration = 0.5f;
+    [SerializeField] float airAcceleration = 0.75f;
     [ReadOnly] public float currentMaxMovementSpeed;
 
     public Vector2 Movement { get; protected set; }
