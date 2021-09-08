@@ -36,7 +36,7 @@ namespace Fralle.FpsController
 
     List<ContactPoint> contacts = new List<ContactPoint>();
     Vector3 Bottom => capsuleCollider.bounds.center - Vector3.up * capsuleCollider.bounds.extents.y;
-    Vector3 Top => capsuleCollider.bounds.center - Vector3.up * capsuleCollider.bounds.extents.y;
+    Vector3 Top => capsuleCollider.bounds.center + Vector3.up * capsuleCollider.bounds.extents.y;
     Vector3 Curve => Bottom + Vector3.up * capsuleCollider.radius * 0.5f;
 
     protected virtual void Awake()

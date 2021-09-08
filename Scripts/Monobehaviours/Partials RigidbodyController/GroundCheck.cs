@@ -29,19 +29,19 @@ namespace Fralle.FpsController
       contacts.AddRange(collision.contacts);
     }
 
-    void OnDrawGizmosSelected()
-    {
-      Gizmos.color = Color.blue;
-      foreach (ContactPoint contactPoint in contacts)
-      {
-        Gizmos.DrawSphere(contactPoint.point, .25f);
-        Vector3 dir = Curve - contactPoint.point;
-        Gizmos.DrawLine(contactPoint.point, dir);
-      }
+    //void OnDrawGizmosSelected()
+    //{
+    //  Gizmos.color = Color.blue;
+    //  foreach (ContactPoint contactPoint in contacts)
+    //  {
+    //    Gizmos.DrawSphere(contactPoint.point, .25f);
+    //    Vector3 dir = Curve - contactPoint.point;
+    //    Gizmos.DrawLine(contactPoint.point, dir);
+    //  }
 
-      Gizmos.color = Color.red;
-      Gizmos.DrawSphere(Bottom, .05f);
-      Gizmos.DrawSphere(Curve, .05f);
-    }
+    //  Gizmos.color = Color.red;
+    //  Gizmos.DrawSphere(Bottom, .05f);
+    //  Gizmos.DrawSphere(Curve, .05f);
+    //}
   }
 }

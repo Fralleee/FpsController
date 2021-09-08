@@ -15,6 +15,7 @@ namespace Fralle.FpsController
 
     Collider[] overlappedColliders = new Collider[8];
     bool extraCrouchBoost;
+    float extraMarginTopCheck = 1.01f;
 
     void Crouch()
     {
@@ -51,7 +52,7 @@ namespace Fralle.FpsController
       SetCapsuleDimensions(0.5f, 2f, 1f);
       if (CharacterCollisionsOverlap())
       {
-        SetCapsuleDimensions(0.5f, 2f, 1f);
+        SetCapsuleDimensions(0.5f, 1f, 0.5f);
         return;
       }
 
@@ -63,16 +64,25 @@ namespace Fralle.FpsController
 
     void SetCapsuleDimensions(float radius, float height, float yOffset)
     {
-      capsuleCollider.radius = radius;
       capsuleCollider.height = Mathf.Clamp(height, radius * 2f, height);
       capsuleCollider.center = new Vector3(0f, yOffset, 0f);
+      capsuleCollider.radius = radius;
     }
 
     bool CharacterCollisionsOverlap()
     {
-      int hits = Physics.OverlapCapsuleNonAlloc(Bottom + transform.position, Top + transform.position, capsuleCollider.radius, overlappedColliders, groundLayers, QueryTriggerInteraction.Ignore);
+      int hits = Physics.OverlapCapsuleNonAlloc(Bottom + Vector3.up * capsuleCollider.radius, Top + Vector3.down * capsuleCollider.radius * extraMarginTopCheck, capsuleCollider.radius, overlappedColliders, groundLayers, QueryTriggerInteraction.Ignore);
       return hits > 0;
     }
 
+    //void OnDrawGizmosSelected()
+    //{
+    //  if (capsuleCollider == null)
+    //    return;
+
+    //  Gizmos.color = Color.red;
+    //  Gizmos.DrawSphere(Bottom + Vector3.up * capsuleCollider.radius, capsuleCollider.radius);
+    //  Gizmos.DrawSphere(Top + Vector3.down * capsuleCollider.radius, capsuleCollider.radius);
+    //}
   }
 }
