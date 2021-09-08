@@ -6,18 +6,15 @@ namespace Fralle.FpsController
   {
     void GroundCheck()
     {
-      if (contacts != null)
+      foreach (ContactPoint contactPoint in contacts)
       {
-        foreach (ContactPoint contactPoint in contacts)
-        {
-          Vector3 dir = Curve - contactPoint.point;
-          if (!(dir.y > 0f) && !(contactPoint.normal.y > 0.01f))
-            continue;
+        Vector3 dir = Curve - contactPoint.point;
+        if (!(dir.y > 0f) && !(contactPoint.normal.y > 0.01f))
+          continue;
 
-          groundContactNormal = contactPoint.normal;
-          slopeAngle = Mathf.Min(slopeAngle, Vector3.Angle(contactPoint.normal, Vector3.up));
-          isGrounded = true;
-        }
+        groundContactNormal = contactPoint.normal;
+        slopeAngle = Mathf.Min(slopeAngle, Vector3.Angle(contactPoint.normal, Vector3.up));
+        isGrounded = true;
       }
 
       if (previouslyGrounded != isGrounded)
@@ -46,6 +43,5 @@ namespace Fralle.FpsController
       Gizmos.DrawSphere(Bottom, .05f);
       Gizmos.DrawSphere(Curve, .05f);
     }
-
   }
 }
