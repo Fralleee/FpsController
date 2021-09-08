@@ -6,10 +6,11 @@ namespace Fralle.FpsController
   public partial class RigidbodyController
   {
     [Header("Movement")]
-    [SerializeField] float baseMovementSpeed = 4f;
-    [SerializeField] float airModifier = 0.5f;
+    [SerializeField] float maxMovementSpeed = 7f;
     [SerializeField] float crouchModifier = 0.5f;
-    [ReadOnly] public float modifiedMovementSpeed;
+    [SerializeField] float groundAcceleration = 7f;
+    [SerializeField] float airAcceleration = 0.5f;
+    [ReadOnly] public float currentMaxMovementSpeed;
 
     public Vector2 Movement { get; protected set; }
 
@@ -19,10 +20,13 @@ namespace Fralle.FpsController
 
     void Move()
     {
-      float acceleration = isGrounded ? modifiedMovementSpeed : modifiedMovementSpeed * airModifier;
-      float maxSpeed = modifiedMovementSpeed * (isGrounded && isCrouching ? crouchModifier : 1f);
+      float acceleration = isGrounded ? groundAcceleration : airAcceleration;
+      float maxSpeed = currentMaxMovementSpeed * (isGrounded && isCrouching ? crouchModifier : 1f);
 
-      desiredVelocity = cameraRig.right * Movement.x * maxSpeed + cameraRig.forward * Movement.y * maxSpeed;
+      Vector3 right = new Vector3(cameraRig.right.x, 0, cameraRig.right.z).normalized;
+      Vector3 forward = Quaternion.Euler(0, -90, 0) * right;
+
+      desiredVelocity = right * Movement.x * maxSpeed + forward * Movement.y * maxSpeed;
 
       isMoving = isGrounded && isStable && desiredVelocity.magnitude > 0;
       Animator.SetBool(AnimIsMoving, isMoving);

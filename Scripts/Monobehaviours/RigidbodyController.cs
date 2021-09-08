@@ -116,7 +116,7 @@ namespace Fralle.FpsController
 
     void OnValidate()
     {
-      modifiedMovementSpeed = baseMovementSpeed;
+      currentMaxMovementSpeed = maxMovementSpeed;
       modifiedJumpHeight = jumpHeight;
     }
   }
