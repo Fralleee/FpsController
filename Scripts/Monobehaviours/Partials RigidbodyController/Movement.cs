@@ -13,6 +13,8 @@ namespace Fralle.FpsController
 
     public Vector2 Movement { get; protected set; }
 
+    Vector3 ProjectOnContactPlane(Vector3 vector) => vector - groundContactNormal * Vector3.Dot(vector, groundContactNormal);
+
     Vector3 desiredVelocity;
 
     void Move()
@@ -46,15 +48,6 @@ namespace Fralle.FpsController
 
       velocity += xAxis * (newX - currentX) + zAxis * (newZ - currentZ);
       rigidBody.velocity = velocity;
-
-      //float newYVel = Mathf.Round(velocity.y * 100f) / 100f;
-      //if (!oldYVel.EqualsWithTolerance(newYVel))
-      //  Debug.Log($"Before {oldYVel}, Now: {newYVel }");
-    }
-
-    Vector3 ProjectOnContactPlane(Vector3 vector)
-    {
-      return vector - groundContactNormal * Vector3.Dot(vector, groundContactNormal);
     }
   }
 }

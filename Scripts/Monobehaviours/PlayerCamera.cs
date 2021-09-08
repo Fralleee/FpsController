@@ -1,12 +1,15 @@
 using Fralle.Core;
 using Fralle.FpsController;
+using Sirenix.OdinInspector;
 using System.Collections;
 using UnityEngine;
 
 public class PlayerCamera : MasterPositioner
 {
-  public Transform playerTransform;
-  public RigidbodyController controller;
+  [ReadOnly] public RigidbodyController controller;
+
+  public Transform weaponCamera;
+  public Transform weaponHolder;
 
   Coroutine lerp;
   Vector3 lastOffset;
@@ -29,7 +32,7 @@ public class PlayerCamera : MasterPositioner
     lerp = StartCoroutine(Lerp(duration));
   }
 
-  public override Vector3 GetPosition() => playerTransform.position + currentOffset;
+  public override Vector3 GetPosition() => controller.transform.position + currentOffset;
 
   IEnumerator Lerp(float lerpDuration)
   {

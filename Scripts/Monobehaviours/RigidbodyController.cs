@@ -1,5 +1,6 @@
 using Fralle.Core;
 using Sirenix.OdinInspector;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Fralle.FpsController
@@ -13,7 +14,7 @@ namespace Fralle.FpsController
     [HideInInspector] public PlayerCamera playerCamera;
     [HideInInspector] public Transform cameraRig;
     [HideInInspector] public Rigidbody rigidBody;
-    [HideInInspector] public CapsuleCollider capsule;
+    [HideInInspector] public CapsuleCollider capsuleCollider;
 
     [Header("Status")]
     [ReadOnly] public bool isLocked;
@@ -33,10 +34,15 @@ namespace Fralle.FpsController
     protected int AnimHorizontal;
     protected int AnimVertical;
 
+    List<ContactPoint> contacts = new List<ContactPoint>();
+    Vector3 Bottom => capsuleCollider.bounds.center - Vector3.up * capsuleCollider.bounds.extents.y;
+    Vector3 Top => capsuleCollider.bounds.center - Vector3.up * capsuleCollider.bounds.extents.y;
+    Vector3 Curve => Bottom + Vector3.up * capsuleCollider.radius * 0.5f;
+
     protected virtual void Awake()
     {
       rigidBody = GetComponent<Rigidbody>();
-      capsule = GetComponent<CapsuleCollider>();
+      capsuleCollider = GetComponent<CapsuleCollider>();
       Animator = GetComponentInChildren<Animator>();
       Model = transform.Find("Model").transform;
 
@@ -73,11 +79,10 @@ namespace Fralle.FpsController
       if (isLocked)
         return;
 
-      isStable = false;
+      ResetFlags();
 
-      ResetJumpingFlag();
+      GroundCheck();
       SlopeControl();
-
       Crouch();
       Move();
 
@@ -85,24 +90,23 @@ namespace Fralle.FpsController
         Jumping();
 
       GravityAdjuster();
-      LimitSpeed();
 
-      GroundChange();
-      ResetGroundVariables();
+      contacts.Clear();
     }
 
-    void GroundChange()
+    public void ResetFlags()
     {
-      if (previouslyGrounded != isGrounded)
-        Animator.SetBool(AnimIsJumping, !isGrounded);
-
       previouslyGrounded = isGrounded;
-    }
-
-    public void ResetGroundVariables()
-    {
       isGrounded = false;
+      isStable = false;
       slopeAngle = 90;
+      groundContactNormal = Vector3.up;
+
+      if (!isJumping || !(rigidBody.velocity.y <= 0))
+        return;
+
+      isJumping = false;
+      extraCrouchBoost = false;
     }
 
     void LateUpdate()

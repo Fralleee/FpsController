@@ -63,19 +63,14 @@ namespace Fralle.FpsController
 
     void SetCapsuleDimensions(float radius, float height, float yOffset)
     {
-      capsule.radius = radius;
-      capsule.height = Mathf.Clamp(height, radius * 2f, height);
-      capsule.center = new Vector3(0f, yOffset, 0f);
+      capsuleCollider.radius = radius;
+      capsuleCollider.height = Mathf.Clamp(height, radius * 2f, height);
+      capsuleCollider.center = new Vector3(0f, yOffset, 0f);
     }
 
     bool CharacterCollisionsOverlap()
     {
-      Vector3 position = transform.position;
-      Bounds bounds = capsule.bounds;
-      Vector3 bottom = position + bounds.center - Vector3.up * bounds.extents.y;
-      Vector3 top = position + bounds.center + Vector3.up * bounds.extents.y;
-
-      int hits = Physics.OverlapCapsuleNonAlloc(bottom, top, capsule.radius, overlappedColliders, groundLayers, QueryTriggerInteraction.Ignore);
+      int hits = Physics.OverlapCapsuleNonAlloc(Bottom + transform.position, Top + transform.position, capsuleCollider.radius, overlappedColliders, groundLayers, QueryTriggerInteraction.Ignore);
       return hits > 0;
     }
 

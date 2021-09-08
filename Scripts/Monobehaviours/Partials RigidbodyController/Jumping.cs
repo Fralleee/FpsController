@@ -29,15 +29,6 @@ namespace Fralle.FpsController
       OnGroundLeave();
     }
 
-    void ResetJumpingFlag()
-    {
-      if (!isJumping || !(rigidBody.velocity.y <= 0))
-        return;
-
-      isJumping = false;
-      extraCrouchBoost = false;
-    }
-
     void CancelVelocityOnJump()
     {
       rigidBody.AddForce(Vector3.up * -rigidBody.velocity.y, ForceMode.VelocityChange);
