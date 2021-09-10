@@ -13,7 +13,6 @@ namespace Fralle.FpsController
 
     void SnapToGround()
     {
-      Debug.DrawRay(transform.position + Vector3.up * 0.1f, Vector3.down * 0.5f, Color.red);
       if (isJumping)
         return;
 
