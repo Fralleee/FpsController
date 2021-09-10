@@ -80,16 +80,19 @@ namespace Fralle.FpsController
         return;
 
       ResetFlags();
-
       GroundCheck();
+
+      // Where we want to move
+      SetDesiredVelocity();
       SlopeControl();
+
+      // Speed modifiers
       Crouch();
-      Move();
-
-      if (queueJump)
-        Jumping();
-
+      Jumping();
       GravityAdjuster();
+
+      // Perform movement
+      Move();
 
       contacts.Clear();
     }

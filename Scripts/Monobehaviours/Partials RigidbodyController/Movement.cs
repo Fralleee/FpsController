@@ -15,43 +15,56 @@ namespace Fralle.FpsController
     public Vector2 Movement { get; protected set; }
 
     Vector3 ProjectOnContactPlane(Vector3 vector) => vector - groundContactNormal * Vector3.Dot(vector, groundContactNormal);
-
     Vector3 desiredVelocity;
+    float slopeModifier;
+    public AnimationCurve SlopeCurveModifier = new AnimationCurve(new Keyframe(-90.0f, 1.0f), new Keyframe(0.0f, 1.0f), new Keyframe(90.0f, 0.0f));
 
     void Move()
     {
       float acceleration = isGrounded ? groundAcceleration : airAcceleration;
-      float maxSpeed = currentMaxMovementSpeed * (isGrounded && isCrouching ? crouchModifier : 1f);
-
-      Vector3 right = new Vector3(cameraRig.right.x, 0, cameraRig.right.z).normalized;
-      Vector3 forward = Quaternion.Euler(0, -90, 0) * right;
-
-      desiredVelocity = right * Movement.x * maxSpeed + forward * Movement.y * maxSpeed;
+      float maxSpeed = currentMaxMovementSpeed;
+      maxSpeed *= isGrounded && isCrouching ? crouchModifier : 1f;
 
       isMoving = isGrounded && isStable && desiredVelocity.magnitude > 0;
       Animator.SetBool(AnimIsMoving, isMoving);
 
       Vector3 velocity = rigidBody.velocity;
-      Vector3 xAxis = Vector3.right;
-      Vector3 zAxis = Vector3.forward;
+      Vector3 xAxis = ProjectOnContactPlane(Vector3.right).normalized;
+      Vector3 zAxis = ProjectOnContactPlane(Vector3.forward).normalized;
 
-      float currentX = velocity.x;
-      float currentZ = velocity.z;
+      float currentX = Vector3.Dot(velocity, xAxis);
+      float currentZ = Vector3.Dot(velocity, zAxis);
+      float newX = Mathf.MoveTowards(currentX, desiredVelocity.x * maxSpeed, acceleration);
+      float newZ = Mathf.MoveTowards(currentZ, desiredVelocity.z * maxSpeed, acceleration);
 
-      if (isStable && !isJumping)
-      {
-        xAxis = ProjectOnContactPlane(Vector3.right).normalized;
-        zAxis = ProjectOnContactPlane(Vector3.forward).normalized;
-
-        currentX = Vector3.Dot(velocity, xAxis);
-        currentZ = Vector3.Dot(velocity, zAxis);
-      }
-
-      float newX = Mathf.MoveTowards(currentX, desiredVelocity.x, acceleration);
-      float newZ = Mathf.MoveTowards(currentZ, desiredVelocity.z, acceleration);
-
-      velocity += xAxis * (newX - currentX) + zAxis * (newZ - currentZ);
+      velocity += xAxis * (newX - currentX) + (zAxis * (newZ - currentZ) * slopeModifier);
       rigidBody.velocity = velocity;
+    }
+
+
+    void SetDesiredVelocity()
+    {
+      Vector3 right = new Vector3(cameraRig.right.x, 0, cameraRig.right.z).normalized;
+      Vector3 forward = Quaternion.Euler(0, -90, 0) * right;
+
+      desiredVelocity = right * Movement.x + forward * Movement.y;
+    }
+
+    void SlopeControl()
+    {
+      if (!isGrounded)
+        return;
+
+      isStable = slopeAngle < maxSlopeAngle + 1;
+
+      if (isStable)
+      {
+        Vector3 upSlopeForce = Vector3.ProjectOnPlane(-Physics.gravity, groundContactNormal);
+        rigidBody.AddForce(upSlopeForce);
+        slopeModifier = 1f;
+      }
+      else
+        slopeModifier = 0f;
     }
   }
 }

@@ -18,6 +18,9 @@ namespace Fralle.FpsController
 
     void Jumping()
     {
+      if (!queueJump)
+        return;
+
       queueJump = false;
       isJumping = true;
       isGrounded = false;
