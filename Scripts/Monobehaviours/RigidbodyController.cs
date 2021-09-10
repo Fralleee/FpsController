@@ -81,6 +81,7 @@ namespace Fralle.FpsController
 
       ResetFlags();
       GroundCheck();
+      SnapToGround();
 
       // Where we want to move
       SetDesiredVelocity();
@@ -100,7 +101,8 @@ namespace Fralle.FpsController
     public void ResetFlags()
     {
       previouslyGrounded = isGrounded;
-      isGrounded = false;
+      if (stepsSinceLastGrounded > fallTimestepBuffer)
+        isGrounded = false;
       isStable = false;
       slopeAngle = 90;
       groundContactNormal = Vector3.up;

@@ -17,7 +17,6 @@ namespace Fralle.FpsController
     Vector3 ProjectOnContactPlane(Vector3 vector) => vector - groundContactNormal * Vector3.Dot(vector, groundContactNormal);
     Vector3 desiredVelocity;
     float slopeModifier;
-    public AnimationCurve SlopeCurveModifier = new AnimationCurve(new Keyframe(-90.0f, 1.0f), new Keyframe(0.0f, 1.0f), new Keyframe(90.0f, 0.0f));
 
     void Move()
     {
