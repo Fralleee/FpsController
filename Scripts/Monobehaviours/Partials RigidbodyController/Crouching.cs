@@ -12,6 +12,7 @@ namespace Fralle.FpsController
     [SerializeField] Vector3 standOffset;
     [SerializeField] Vector3 crouchOffset;
     [SerializeField] float crouchTime = 0.2f;
+    [SerializeField] float extraJumpBoost = 0.25f;
 
     Collider[] overlappedColliders = new Collider[8];
     bool extraCrouchBoost;
@@ -40,7 +41,7 @@ namespace Fralle.FpsController
 
       if (extraCrouchBoost)
       {
-        rigidBody.AddForce(Vector3.up * Mathf.Sqrt(-2f * Physics.gravity.y * gravityModifier * 0.5f), ForceMode.VelocityChange);
+        rigidBody.AddForce(Vector3.up * Mathf.Sqrt(-2f * Physics.gravity.y * gravityModifier * extraJumpBoost), ForceMode.VelocityChange);
         extraCrouchBoost = false;
       }
 
