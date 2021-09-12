@@ -39,7 +39,7 @@ namespace Fralle.FpsController
       if (isGrounded && !isStable || isJumping)
       {
         Vector3 downGroundNormal = ProjectOnContactPlane(Vector3.down).normalized;
-        float traversingUpwardsSlopeFactor = Vector3.Dot(movementVelocity.normalized, -downGroundNormal);
+        float traversingUpwardsSlopeFactor = Mathf.Max(0, Vector3.Dot(movementVelocity.normalized, -downGroundNormal));
         movementVelocity += downGroundNormal * traversingUpwardsSlopeFactor * movementVelocity.magnitude;
       }
 
