@@ -13,6 +13,9 @@ namespace Fralle.FpsController
 
     void SnapToGround()
     {
+      if (isGrounded)
+        return;
+
       if (isJumping)
         return;
 
@@ -30,6 +33,7 @@ namespace Fralle.FpsController
       float contactSlopeAngle = Vector3.Angle(hit.normal, Vector3.up);
       groundContactNormal = hit.normal;
       slopeAngle = contactSlopeAngle;
+      isStable = slopeAngle < maxSlopeAngle + 1;
       stepsSinceLastGrounded = 0;
       isGrounded = true;
 
@@ -54,19 +58,17 @@ namespace Fralle.FpsController
         {
           groundContactNormal = contactPoint.normal;
           slopeAngle = contactSlopeAngle;
+          isStable = slopeAngle < maxSlopeAngle + 1;
         }
 
         stepsSinceLastGrounded = 0;
         isGrounded = true;
       }
-
-      if (previouslyGrounded != isGrounded)
-        Animator.SetBool(AnimIsJumping, !isGrounded);
     }
 
     void OnCollisionStay(Collision collision)
     {
-      if (isJumping)
+      if (isJumping || isLocked)
         return;
 
       contacts.AddRange(collision.contacts);

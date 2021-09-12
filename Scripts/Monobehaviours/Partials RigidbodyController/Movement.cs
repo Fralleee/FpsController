@@ -16,7 +16,6 @@ namespace Fralle.FpsController
 
     Vector3 ProjectOnContactPlane(Vector3 vector) => vector - groundContactNormal * Vector3.Dot(vector, groundContactNormal);
     Vector3 desiredVelocity;
-    float slopeModifier;
 
     void Move()
     {
@@ -30,13 +29,21 @@ namespace Fralle.FpsController
       Vector3 velocity = rigidBody.velocity;
       Vector3 xAxis = ProjectOnContactPlane(Vector3.right).normalized;
       Vector3 zAxis = ProjectOnContactPlane(Vector3.forward).normalized;
-
       float currentX = Vector3.Dot(velocity, xAxis);
       float currentZ = Vector3.Dot(velocity, zAxis);
       float newX = Mathf.MoveTowards(currentX, desiredVelocity.x * maxSpeed, acceleration);
       float newZ = Mathf.MoveTowards(currentZ, desiredVelocity.z * maxSpeed, acceleration);
 
-      velocity += xAxis * (newX - currentX) + (zAxis * (newZ - currentZ) * slopeModifier);
+      Vector3 movementVelocity = xAxis * (newX - currentX) + zAxis * (newZ - currentZ);
+
+      if (isGrounded && !isStable || isJumping)
+      {
+        Vector3 downGroundNormal = ProjectOnContactPlane(Vector3.down).normalized;
+        float traversingUpwardsSlopeFactor = Vector3.Dot(movementVelocity.normalized, -downGroundNormal);
+        movementVelocity += downGroundNormal * traversingUpwardsSlopeFactor * movementVelocity.magnitude;
+      }
+
+      velocity += movementVelocity;
       rigidBody.velocity = velocity;
     }
 
@@ -54,16 +61,11 @@ namespace Fralle.FpsController
       if (!isGrounded)
         return;
 
-      isStable = slopeAngle < maxSlopeAngle + 1;
-
       if (isStable)
       {
         Vector3 upSlopeForce = Vector3.ProjectOnPlane(-Physics.gravity, groundContactNormal);
         rigidBody.AddForce(upSlopeForce);
-        slopeModifier = 1f;
       }
-      else
-        slopeModifier = 0f;
     }
   }
 }

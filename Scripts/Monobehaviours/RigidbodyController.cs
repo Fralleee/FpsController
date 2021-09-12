@@ -39,6 +39,8 @@ namespace Fralle.FpsController
     Vector3 Top => capsuleCollider.bounds.center + Vector3.up * capsuleCollider.bounds.extents.y;
     Vector3 Curve => Bottom + Vector3.up * capsuleCollider.radius * 0.5f;
 
+    bool disallowJump => !isGrounded || !isStable || !JumpButton || isJumping;
+
     protected virtual void Awake()
     {
       rigidBody = GetComponent<Rigidbody>();
@@ -66,7 +68,7 @@ namespace Fralle.FpsController
       if (isLocked)
         return;
 
-      if (!isGrounded || !JumpButton || isJumping)
+      if (disallowJump)
         return;
 
       JumpButton = false;
@@ -95,14 +97,18 @@ namespace Fralle.FpsController
       // Perform movement
       Move();
 
+
+      bool animateFalling = stepsSinceLastGrounded > fallTimestepBuffer;
+      //Debug.Log($"AnimateFalling: {animateFalling}, stepsSinceLastGrounded: {stepsSinceLastGrounded}, fallTimestepBuffer: {fallTimestepBuffer}");
+      Animator.SetBool(AnimIsJumping, animateFalling);
+
       contacts.Clear();
     }
 
     public void ResetFlags()
     {
       previouslyGrounded = isGrounded;
-      if (stepsSinceLastGrounded > fallTimestepBuffer)
-        isGrounded = false;
+      isGrounded = false;
       isStable = false;
       slopeAngle = 90;
       groundContactNormal = Vector3.up;
