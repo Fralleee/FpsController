@@ -1,3 +1,4 @@
+using Fralle.Core;
 using UnityEngine;
 
 namespace Fralle.FpsController
@@ -6,13 +7,17 @@ namespace Fralle.FpsController
   {
     [Header("Gravity adjuster")]
     public float gravityModifier = 2f;
+    [SerializeField] float maxFallSpeed = 30f;
 
     void GravityAdjuster()
     {
       if (isGrounded)
         return;
 
-      rigidBody.velocity += Physics.gravity * (gravityModifier - 1) * Time.fixedDeltaTime;
+      if (rigidBody.velocity.y < -maxFallSpeed)
+        rigidBody.velocity = rigidBody.velocity.With(y: -maxFallSpeed);
+      else
+        rigidBody.velocity += Physics.gravity * (gravityModifier - 1) * Time.fixedDeltaTime;
     }
   }
 }

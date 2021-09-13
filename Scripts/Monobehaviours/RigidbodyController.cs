@@ -1,6 +1,5 @@
 using Fralle.Core;
 using Sirenix.OdinInspector;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Fralle.FpsController
@@ -23,6 +22,7 @@ namespace Fralle.FpsController
     [ReadOnly] public bool isMoving;
     [ReadOnly] public bool isJumping;
     [ReadOnly] public bool isCrouching;
+    [ReadOnly] public float movementSpeedProduct;
     [ReadOnly] public float slopeAngle;
     [ReadOnly] public Vector3 groundContactNormal;
     [ReadOnly] public bool previouslyGrounded;
@@ -34,10 +34,8 @@ namespace Fralle.FpsController
     protected int AnimHorizontal;
     protected int AnimVertical;
 
-    List<ContactPoint> contacts = new List<ContactPoint>();
     Vector3 Bottom => capsuleCollider.bounds.center - Vector3.up * capsuleCollider.bounds.extents.y;
     Vector3 Top => capsuleCollider.bounds.center + Vector3.up * capsuleCollider.bounds.extents.y;
-    Vector3 Curve => Bottom + Vector3.up * capsuleCollider.radius * 0.5f;
 
     bool disallowJump => !isGrounded || !isStable || !JumpButton || isJumping;
 
@@ -97,12 +95,8 @@ namespace Fralle.FpsController
       // Perform movement
       Move();
 
-
       bool animateFalling = stepsSinceLastGrounded > fallTimestepBuffer;
-      //Debug.Log($"AnimateFalling: {animateFalling}, stepsSinceLastGrounded: {stepsSinceLastGrounded}, fallTimestepBuffer: {fallTimestepBuffer}");
       Animator.SetBool(AnimIsJumping, animateFalling);
-
-      contacts.Clear();
     }
 
     public void ResetFlags()

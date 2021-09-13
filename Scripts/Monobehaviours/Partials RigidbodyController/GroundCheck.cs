@@ -6,10 +6,13 @@ namespace Fralle.FpsController
   {
     [Header("Ground Control")]
     [SerializeField] float maxSlopeAngle = 45;
-    [SerializeField] float fallTimestepBuffer = 3;
-    [SerializeField] float snapToGroundProbingDistance = 0.5f;
+    [SerializeField] float groundCheckDistance = 0.1f;
+    [SerializeField] float snapToGroundProbingDistance = 1;
+    [SerializeField] int fallTimestepBuffer = 3;
 
     int stepsSinceLastGrounded;
+    RaycastHit groundHitInfo;
+    Vector3 origin => transform.position + Vector3.up * (capsuleCollider.radius + Physics.defaultContactOffset);
 
     void SnapToGround()
     {
@@ -22,65 +25,45 @@ namespace Fralle.FpsController
       if (stepsSinceLastGrounded > fallTimestepBuffer)
         return;
 
-
-      if (!Physics.Raycast(transform.position + Vector3.up * 0.01f, Vector3.down * snapToGroundProbingDistance, out RaycastHit hit))
+      if (!Physics.Raycast(origin, Vector3.down, out groundHitInfo, snapToGroundProbingDistance, groundLayers, QueryTriggerInteraction.Ignore))
         return;
 
-      Vector3 dir = Curve - hit.point;
-      if (dir.y < 0f && hit.normal.y < 0.01f)
-        return;
-
-      float contactSlopeAngle = Vector3.Angle(hit.normal, Vector3.up);
-      groundContactNormal = hit.normal;
-      slopeAngle = contactSlopeAngle;
-      isStable = slopeAngle < maxSlopeAngle + 1;
       stepsSinceLastGrounded = 0;
       isGrounded = true;
+      SetSlope(groundHitInfo);
 
       Vector3 velocity = rigidBody.velocity;
       float speed = velocity.magnitude;
-      float dot = Vector3.Dot(velocity, hit.normal);
+      float dot = Vector3.Dot(velocity, groundHitInfo.normal);
       if (dot > 0f)
-        rigidBody.velocity = (velocity - hit.normal * dot).normalized * speed;
+        rigidBody.velocity = (velocity - groundHitInfo.normal * dot).normalized * speed;
     }
 
     void GroundCheck()
     {
-      stepsSinceLastGrounded++;
-      foreach (ContactPoint contactPoint in contacts)
+      bool groundHit = Physics.SphereCast(origin, capsuleCollider.radius - Physics.defaultContactOffset, Vector3.down, out groundHitInfo, groundCheckDistance, groundLayers, QueryTriggerInteraction.Ignore);
+      if (groundHit)
       {
-        Vector3 dir = Curve - contactPoint.point;
-        if (dir.y < 0f && contactPoint.normal.y < 0.01f)
-          continue;
-
-        float contactSlopeAngle = Vector3.Angle(contactPoint.normal, Vector3.up);
-        if (contactSlopeAngle < slopeAngle)
-        {
-          groundContactNormal = contactPoint.normal;
-          slopeAngle = contactSlopeAngle;
-          isStable = slopeAngle < maxSlopeAngle + 1;
-        }
-
         stepsSinceLastGrounded = 0;
         isGrounded = true;
+
+        if (Physics.Raycast(groundHitInfo.point + Vector3.up * 0.01f, Vector3.down, out RaycastHit hitInfo, 0.02f, groundLayers, QueryTriggerInteraction.Ignore))
+        {
+          float sphereSlopeAngle = Vector3.Angle(groundHitInfo.normal, Vector3.up);
+          float raycastSlopeAngle = Vector3.Angle(hitInfo.normal, Vector3.up);
+          if (raycastSlopeAngle < sphereSlopeAngle)
+            groundHitInfo = hitInfo;
+        }
+
+        SetSlope(groundHitInfo);
       }
     }
 
-    void OnCollisionStay(Collision collision)
+    void SetSlope(RaycastHit hitInfo)
     {
-      if (isJumping || isLocked)
-        return;
-
-      contacts.AddRange(collision.contacts);
-    }
-
-    void OnDrawGizmosSelected()
-    {
-      Gizmos.color = Color.blue;
-      foreach (ContactPoint contactPoint in contacts)
-      {
-        Gizmos.DrawSphere(contactPoint.point, .25f);
-      }
+      groundContactNormal = hitInfo.normal;
+      slopeAngle = Vector3.Angle(hitInfo.normal, Vector3.up);
+      isStable = slopeAngle < maxSlopeAngle + 1;
     }
   }
 }

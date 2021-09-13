@@ -22,6 +22,7 @@ namespace Fralle.FpsController
       float acceleration = isGrounded ? groundAcceleration : airAcceleration;
       float maxSpeed = currentMaxMovementSpeed;
       maxSpeed *= isGrounded && isCrouching ? crouchModifier : 1f;
+      movementSpeedProduct = maxSpeed / currentMaxMovementSpeed;
 
       isMoving = isGrounded && isStable && desiredVelocity.magnitude > 0;
       Animator.SetBool(AnimIsMoving, isMoving);
@@ -36,11 +37,14 @@ namespace Fralle.FpsController
 
       Vector3 movementVelocity = xAxis * (newX - currentX) + zAxis * (newZ - currentZ);
 
-      if (isGrounded && !isStable || isJumping)
+      if (isGrounded && !isStable)
       {
         Vector3 downGroundNormal = ProjectOnContactPlane(Vector3.down).normalized;
+        float velTraversingUpwardsSlopeFactor = Mathf.Max(0, Vector3.Dot(velocity.normalized, -downGroundNormal));
         float traversingUpwardsSlopeFactor = Mathf.Max(0, Vector3.Dot(movementVelocity.normalized, -downGroundNormal));
         movementVelocity += downGroundNormal * traversingUpwardsSlopeFactor * movementVelocity.magnitude;
+
+        velocity += downGroundNormal * velTraversingUpwardsSlopeFactor * 0.2f;
       }
 
       velocity += movementVelocity;
