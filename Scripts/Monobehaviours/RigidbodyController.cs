@@ -1,31 +1,63 @@
 using Fralle.Core;
 using Sirenix.OdinInspector;
+using System;
 using UnityEngine;
 
 namespace Fralle.FpsController
 {
   public partial class RigidbodyController : MonoBehaviour
   {
-    [Header("Setup")]
-    [SerializeField] LayerMask groundLayers;
+    public event Action OnGroundLeave = delegate { };
+    public event Action<bool> OnCrouch = delegate { };
 
     [HideInInspector] public new Camera camera;
     [HideInInspector] public PlayerCamera playerCamera;
     [HideInInspector] public Transform cameraRig;
     [HideInInspector] public Rigidbody rigidBody;
     [HideInInspector] public CapsuleCollider capsuleCollider;
+    [HideInInspector] public Vector3 desiredVelocity;
+    [HideInInspector] public Vector2 Movement { get; protected set; }
+    [HideInInspector] public Vector2 MouseLook { get; protected set; }
+    [HideInInspector] public float movementSpeedProduct;
+    [HideInInspector] public int stepsSinceLastGrounded;
+    [HideInInspector] public int stepsSinceLastJump;
+    [HideInInspector] public bool previouslyGrounded;
 
-    [Header("Status")]
-    [ReadOnly] public bool isLocked;
-    [ReadOnly] public bool isGrounded;
-    [ReadOnly] public bool isStable;
-    [ReadOnly] public bool isMoving;
-    [ReadOnly] public bool isJumping;
-    [ReadOnly] public bool isCrouching;
-    [ReadOnly] public float movementSpeedProduct;
-    [ReadOnly] public float slopeAngle;
-    [ReadOnly] public Vector3 groundContactNormal;
-    [ReadOnly] public bool previouslyGrounded;
+    [FoldoutGroup("Status")] [ReadOnly] public float currentMaxMovementSpeed;
+    [FoldoutGroup("Status")] [ReadOnly] public float modifiedJumpHeight;
+    [FoldoutGroup("Status")] [ReadOnly] public Vector3 groundContactNormal;
+    [FoldoutGroup("Status")] [ReadOnly] public float slopeAngle;
+    [FoldoutGroup("Status")] [ReadOnly] public bool isLocked;
+    [FoldoutGroup("Status")] [ReadOnly] public bool isGrounded;
+    [FoldoutGroup("Status")] [ReadOnly] public bool isStable;
+    [FoldoutGroup("Status")] [ReadOnly] public bool isMoving;
+    [FoldoutGroup("Status")] [ReadOnly] public bool isJumping;
+    [FoldoutGroup("Status")] [ReadOnly] public bool isCrouching;
+
+    [FoldoutGroup("Mouse look")] public float mouseSensitivity = 3f;
+    [FoldoutGroup("Mouse look")] public float smoothTime = 0.01f;
+    [FoldoutGroup("Mouse look")] public float clampY = 90f;
+
+    [FoldoutGroup("Movement")] public float maxMovementSpeed = 7f;
+    [FoldoutGroup("Movement")] public float crouchModifier = 0.5f;
+    [FoldoutGroup("Movement")] public float groundAcceleration = 7f;
+    [FoldoutGroup("Movement")] public float airAcceleration = 0.75f;
+
+    [FoldoutGroup("Ground Control")] public LayerMask groundLayers;
+    [FoldoutGroup("Ground Control")] public float maxSlopeAngle = 45;
+    [FoldoutGroup("Ground Control")] public float groundCheckDistance = 0.1f;
+    [FoldoutGroup("Ground Control")] public float snapToGroundProbingDistance = 1;
+    [FoldoutGroup("Ground Control")] public int fallTimestepBuffer = 3;
+    [FoldoutGroup("Ground Control")] public float gravityModifier = 2f;
+    [FoldoutGroup("Ground Control")] public float maxFallSpeed = 30f;
+
+    [FoldoutGroup("Jumping")] public float jumpHeight = 2f;
+    [FoldoutGroup("Jumping")] public int jumpTimestepCooldown = 3;
+
+    [FoldoutGroup("Crouching")] public Vector3 standOffset;
+    [FoldoutGroup("Crouching")] public Vector3 crouchOffset;
+    [FoldoutGroup("Crouching")] public float crouchTime = 0.2f;
+    [FoldoutGroup("Crouching")] public float extraJumpBoost = 0.25f;
 
     protected Animator Animator;
     protected Transform Model;
@@ -33,11 +65,18 @@ namespace Fralle.FpsController
     protected int AnimIsJumping;
     protected int AnimHorizontal;
     protected int AnimVertical;
+    protected bool JumpButton;
+    protected bool CrouchButton;
 
-    Vector3 Bottom => capsuleCollider.bounds.center - Vector3.up * capsuleCollider.bounds.extents.y;
-    Vector3 Top => capsuleCollider.bounds.center + Vector3.up * capsuleCollider.bounds.extents.y;
-
-    bool disallowJump => !isGrounded || !isStable || !JumpButton || isJumping;
+    LookRotationTransformer rotationTransformer;
+    RaycastHit groundHitInfo;
+    Vector2 cameraRotation;
+    Vector2 refVelocity;
+    bool queueJump;
+    bool extraCrouchBoost;
+    bool canJump => isGrounded && isStable && JumpButton && !isJumping;
+    float GetAcceleration => isGrounded ? groundAcceleration : airAcceleration;
+    float GetMaxSpeed => currentMaxMovementSpeed * (isGrounded && isCrouching ? crouchModifier : 1f);
 
     protected virtual void Awake()
     {
@@ -66,12 +105,7 @@ namespace Fralle.FpsController
       if (isLocked)
         return;
 
-      if (disallowJump)
-        return;
-
-      JumpButton = false;
-      queueJump = true;
-
+      JumpInput();
     }
 
     protected virtual void FixedUpdate()
@@ -80,26 +114,42 @@ namespace Fralle.FpsController
         return;
 
       ResetFlags();
+
+      // Grounding
+      stepsSinceLastGrounded++;
+      stepsSinceLastJump++;
       GroundCheck();
       SnapToGround();
 
-      // Where we want to move
-      SetDesiredVelocity();
-      SlopeControl();
+      // Direction
+      desiredVelocity = Utils.GetDesiredVelocity(cameraRig, Movement);
+      rigidBody.AddForce(Utils.SlopeCounterForce(this));
 
-      // Speed modifiers
-      Crouch();
-      Jumping();
+      // Actions
+      PerformCrouch();
+      PerformJump();
+      PerformMovement();
+
       GravityAdjuster();
+      SetFlags();
+    }
 
-      // Perform movement
-      Move();
+    void LateUpdate()
+    {
+      CameraLook();
+    }
+
+    void SetFlags()
+    {
+      movementSpeedProduct = isCrouching ? 0.5f : 1f;
+      isMoving = isGrounded && isStable && desiredVelocity.magnitude > 0;
 
       bool animateFalling = stepsSinceLastGrounded > fallTimestepBuffer;
       Animator.SetBool(AnimIsJumping, animateFalling);
+      Animator.SetBool(AnimIsMoving, isMoving);
     }
 
-    public void ResetFlags()
+    void ResetFlags()
     {
       previouslyGrounded = isGrounded;
       isGrounded = false;
@@ -107,16 +157,161 @@ namespace Fralle.FpsController
       slopeAngle = 90;
       groundContactNormal = Vector3.up;
 
-      if (!isJumping || !(rigidBody.velocity.y <= 0))
+      if (!isJumping || stepsSinceLastJump <= jumpTimestepCooldown)
         return;
 
       isJumping = false;
       extraCrouchBoost = false;
     }
 
-    void LateUpdate()
+    void PerformCrouch()
     {
-      CameraLook();
+      if (CrouchButton && !isCrouching)
+        StartCrouch();
+      else if (!CrouchButton && isCrouching)
+        EndCrouch();
+    }
+
+    void StartCrouch()
+    {
+      isCrouching = true;
+      CapsuleConfiguration capsuleConfiguration = Utils.SetCapsuleDimensions(0.5f, 1f);
+      capsuleConfiguration.Apply(capsuleCollider);
+      Model.localScale = new Vector3(1f, 0.5f, 1f);
+      playerCamera.SetOffset(crouchOffset, crouchTime);
+
+      if (extraCrouchBoost)
+      {
+        rigidBody.AddForce(Utils.AddJumpForce(extraJumpBoost, gravityModifier), ForceMode.VelocityChange);
+        extraCrouchBoost = false;
+      }
+
+      OnCrouch(true);
+    }
+
+    void EndCrouch()
+    {
+      CapsuleConfiguration capsuleConfiguration = Utils.SetCapsuleDimensions(0.5f, 2f);
+      if (Utils.CapsuleCollisionsOverlap(capsuleConfiguration, groundLayers))
+        return;
+
+      capsuleConfiguration.Apply(capsuleCollider);
+      Model.localScale = Vector3.one;
+      playerCamera.SetOffset(standOffset, crouchTime);
+      isCrouching = false;
+      OnCrouch(false);
+    }
+
+    void JumpInput()
+    {
+      if (!canJump)
+        return;
+
+      JumpButton = false;
+      queueJump = true;
+    }
+
+    void PerformJump()
+    {
+      if (!queueJump)
+        return;
+
+      stepsSinceLastJump = 0;
+      queueJump = false;
+      isJumping = true;
+      isGrounded = false;
+      extraCrouchBoost = true;
+
+      rigidBody.AddForce(Vector3.up * -rigidBody.velocity.y, ForceMode.VelocityChange);
+      rigidBody.AddForce(Utils.AddJumpForce(modifiedJumpHeight, gravityModifier), ForceMode.VelocityChange);
+
+      OnGroundLeave();
+    }
+
+    void PerformMovement()
+    {
+      float acceleration = GetAcceleration;
+      float maxSpeed = GetMaxSpeed;
+
+      Vector3 velocity = rigidBody.velocity;
+      Vector3 xAxis = Utils.ProjectOnContactPlane(Vector3.right, groundContactNormal).normalized;
+      Vector3 zAxis = Utils.ProjectOnContactPlane(Vector3.forward, groundContactNormal).normalized;
+
+      float currentX = Vector3.Dot(velocity, xAxis);
+      float currentZ = Vector3.Dot(velocity, zAxis);
+      float newX = Mathf.MoveTowards(currentX, desiredVelocity.x * maxSpeed, acceleration);
+      float newZ = Mathf.MoveTowards(currentZ, desiredVelocity.z * maxSpeed, acceleration);
+
+      Vector3 movementVelocity = xAxis * (newX - currentX) + zAxis * (newZ - currentZ);
+      if (isGrounded && !isStable) // On steep slope
+      {
+        Vector3 slopeDirection = Utils.ProjectOnContactPlane(Vector3.down, groundContactNormal).normalized;
+        movementVelocity += Utils.SlideDownSlope(movementVelocity, slopeDirection);
+        velocity += Utils.SlideDownSlope(velocity * 0.1f, slopeDirection);
+      }
+
+      rigidBody.velocity = velocity + movementVelocity;
+    }
+
+    void GroundCheck()
+    {
+      Vector3 origin = Utils.GroundCastOrigin(transform.position, capsuleCollider.radius);
+      bool groundHit = Physics.SphereCast(origin, capsuleCollider.radius - Physics.defaultContactOffset, Vector3.down, out groundHitInfo, groundCheckDistance, groundLayers, QueryTriggerInteraction.Ignore);
+      if (groundHit)
+      {
+        if (Physics.Raycast(groundHitInfo.point + Vector3.up * 0.01f, Vector3.down, out RaycastHit hitInfo, 0.02f, groundLayers, QueryTriggerInteraction.Ignore))
+        {
+          float sphereSlopeAngle = Vector3.Angle(groundHitInfo.normal, Vector3.up);
+          float raycastSlopeAngle = Vector3.Angle(hitInfo.normal, Vector3.up);
+          if (raycastSlopeAngle < sphereSlopeAngle)
+            groundHitInfo = hitInfo;
+        }
+
+        isGrounded = true;
+        SetGroundedProperties();
+      }
+    }
+
+    void SnapToGround()
+    {
+      if (isGrounded)
+        return;
+
+      if (isJumping)
+        return;
+
+      if (stepsSinceLastGrounded > fallTimestepBuffer)
+        return;
+
+      if (!Physics.Raycast(Utils.GroundCastOrigin(transform.position, capsuleCollider.radius), Vector3.down, out groundHitInfo, snapToGroundProbingDistance, groundLayers, QueryTriggerInteraction.Ignore))
+        return;
+
+      isGrounded = true;
+      rigidBody.velocity = Utils.SnapToGroundVelocity(rigidBody.velocity, groundHitInfo.normal);
+      SetGroundedProperties();
+    }
+
+    void SetGroundedProperties()
+    {
+      groundContactNormal = groundHitInfo.normal;
+      stepsSinceLastGrounded = 0;
+      slopeAngle = Vector3.Angle(groundContactNormal, Vector3.up);
+      isStable = slopeAngle < maxSlopeAngle + 1;
+    }
+
+    void GravityAdjuster()
+    {
+      if (!isGrounded)
+        rigidBody.velocity = Utils.ClampedGravity(rigidBody.velocity, maxFallSpeed, gravityModifier);
+    }
+
+    void CameraLook()
+    {
+      cameraRotation = Vector2.SmoothDamp(cameraRotation, new Vector2(cameraRotation.x + MouseLook.x * mouseSensitivity, Mathf.Clamp(cameraRotation.y + MouseLook.y * mouseSensitivity, -clampY, clampY)), ref refVelocity, smoothTime);
+
+      Vector3 rot = cameraRig.transform.rotation.eulerAngles;
+      cameraRig.transform.localRotation = Quaternion.Euler(rot.x, cameraRotation.x, rot.z);
+      rotationTransformer.ApplyLookRotation(Quaternion.Euler(cameraRotation.y, cameraRotation.x, 0));
     }
 
     void OnValidate()
