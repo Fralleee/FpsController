@@ -44,7 +44,7 @@ namespace Fralle.FpsController
     [FoldoutGroup("Movement")] public float airAcceleration = 0.75f;
 
     [FoldoutGroup("Ground Control")] public LayerMask groundLayers;
-    [FoldoutGroup("Ground Control")] public float maxSlopeAngle = 45;
+    [FoldoutGroup("Ground Control")] [Range(1, 90f)] public float maxSlopeAngle = 45;
     [FoldoutGroup("Ground Control")] public float groundCheckDistance = 0.1f;
     [FoldoutGroup("Ground Control")] public float snapToGroundProbingDistance = 1;
     [FoldoutGroup("Ground Control")] public int fallTimestepBuffer = 3;
@@ -72,9 +72,13 @@ namespace Fralle.FpsController
     RaycastHit groundHitInfo;
     Vector2 cameraRotation;
     Vector2 refVelocity;
+    Vector3 edgeCompensationNormal;
     bool queueJump;
     bool extraCrouchBoost;
-    bool canJump => isGrounded && isStable && JumpButton && !isJumping;
+    bool performEdgeCompensation;
+
+    bool PerformSlopeSlideCompensation => isGrounded && isStable && slopeAngle > 0;
+    bool CanJump => isGrounded && isStable && JumpButton && !isJumping;
     float GetAcceleration => isGrounded ? groundAcceleration : airAcceleration;
     float GetMaxSpeed => currentMaxMovementSpeed * (isGrounded && isCrouching ? crouchModifier : 1f);
 
@@ -120,10 +124,9 @@ namespace Fralle.FpsController
       stepsSinceLastJump++;
       GroundCheck();
       SnapToGround();
+      EdgeAndSlopeHandling();
 
-      // Direction
       desiredVelocity = Utils.GetDesiredVelocity(cameraRig, Movement);
-      rigidBody.AddForce(Utils.SlopeCounterForce(this));
 
       // Actions
       PerformCrouch();
@@ -164,19 +167,70 @@ namespace Fralle.FpsController
       extraCrouchBoost = false;
     }
 
-    void PerformCrouch()
+    void GroundCheck()
     {
-      if (CrouchButton && !isCrouching)
-        StartCrouch();
-      else if (!CrouchButton && isCrouching)
-        EndCrouch();
+      performEdgeCompensation = false;
+      Vector3 origin = Utils.GroundCastOrigin(transform.position, capsuleCollider.radius);
+      bool groundHit = Physics.SphereCast(origin, capsuleCollider.radius - Physics.defaultContactOffset, Vector3.down, out groundHitInfo, groundCheckDistance, groundLayers, QueryTriggerInteraction.Ignore);
+      if (groundHit)
+      {
+        float sphereSlopeAngle = Vector3.Angle(groundHitInfo.normal, Vector3.up);
+        float raycastSlopeAngle = 0;
+        edgeCompensationNormal = groundHitInfo.normal;
+        if (Physics.Raycast(groundHitInfo.point + Vector3.up * 0.01f, Vector3.down, out RaycastHit hitInfo, 0.02f, groundLayers, QueryTriggerInteraction.Ignore))
+        {
+          raycastSlopeAngle = Vector3.Angle(hitInfo.normal, Vector3.up);
+          if (raycastSlopeAngle < sphereSlopeAngle)
+            groundHitInfo = hitInfo;
+          else
+            edgeCompensationNormal = hitInfo.normal;
+        }
+
+        isGrounded = true;
+        performEdgeCompensation = desiredVelocity.magnitude == 0 && !raycastSlopeAngle.EqualsWithTolerance(sphereSlopeAngle, tolerance: 1f);
+        SetGroundedProperties();
+      }
+    }
+
+    void SnapToGround()
+    {
+      if (isGrounded)
+        return;
+
+      if (isJumping)
+        return;
+
+      if (stepsSinceLastGrounded > fallTimestepBuffer)
+        return;
+
+      if (!Physics.Raycast(Utils.GroundCastOrigin(transform.position, capsuleCollider.radius), Vector3.down, out groundHitInfo, snapToGroundProbingDistance, groundLayers, QueryTriggerInteraction.Ignore))
+        return;
+
+      isGrounded = true;
+      rigidBody.velocity = Utils.SnapToGroundVelocity(rigidBody.velocity, groundHitInfo.normal);
+      SetGroundedProperties();
+    }
+
+    void SetGroundedProperties()
+    {
+      groundContactNormal = groundHitInfo.normal;
+      stepsSinceLastGrounded = 0;
+      slopeAngle = Vector3.Angle(groundContactNormal, Vector3.up);
+      isStable = slopeAngle < maxSlopeAngle + 1;
+    }
+
+    void EdgeAndSlopeHandling()
+    {
+      if (performEdgeCompensation)
+        rigidBody.AddForce(Utils.ProjectOnContactPlane(-Physics.gravity, edgeCompensationNormal));
+      else if (PerformSlopeSlideCompensation)
+        rigidBody.AddForce(Utils.ProjectOnContactPlane(-Physics.gravity, groundContactNormal));
     }
 
     void StartCrouch()
     {
       isCrouching = true;
-      CapsuleConfiguration capsuleConfiguration = Utils.SetCapsuleDimensions(0.5f, 1f);
-      capsuleConfiguration.Apply(capsuleCollider);
+      Utils.SetCapsuleDimensions(capsuleCollider, 0.5f, 1f);
       Model.localScale = new Vector3(1f, 0.5f, 1f);
       playerCamera.SetOffset(crouchOffset, crouchTime);
 
@@ -191,11 +245,10 @@ namespace Fralle.FpsController
 
     void EndCrouch()
     {
-      CapsuleConfiguration capsuleConfiguration = Utils.SetCapsuleDimensions(0.5f, 2f);
-      if (Utils.CapsuleCollisionsOverlap(capsuleConfiguration, groundLayers))
+      if (Utils.RoofCheck(transform.position, 2f, capsuleCollider.radius, groundLayers))
         return;
 
-      capsuleConfiguration.Apply(capsuleCollider);
+      Utils.SetCapsuleDimensions(capsuleCollider, 0.5f, 2f);
       Model.localScale = Vector3.one;
       playerCamera.SetOffset(standOffset, crouchTime);
       isCrouching = false;
@@ -204,11 +257,19 @@ namespace Fralle.FpsController
 
     void JumpInput()
     {
-      if (!canJump)
+      if (!CanJump)
         return;
 
       JumpButton = false;
       queueJump = true;
+    }
+
+    void PerformCrouch()
+    {
+      if (CrouchButton && !isCrouching)
+        StartCrouch();
+      else if (!CrouchButton && isCrouching)
+        EndCrouch();
     }
 
     void PerformJump()
@@ -243,60 +304,14 @@ namespace Fralle.FpsController
       float newZ = Mathf.MoveTowards(currentZ, desiredVelocity.z * maxSpeed, acceleration);
 
       Vector3 movementVelocity = xAxis * (newX - currentX) + zAxis * (newZ - currentZ);
+
       if (isGrounded && !isStable) // On steep slope
       {
         Vector3 slopeDirection = Utils.ProjectOnContactPlane(Vector3.down, groundContactNormal).normalized;
         movementVelocity += Utils.SlideDownSlope(movementVelocity, slopeDirection);
-        velocity += Utils.SlideDownSlope(velocity * 0.1f, slopeDirection);
       }
 
       rigidBody.velocity = velocity + movementVelocity;
-    }
-
-    void GroundCheck()
-    {
-      Vector3 origin = Utils.GroundCastOrigin(transform.position, capsuleCollider.radius);
-      bool groundHit = Physics.SphereCast(origin, capsuleCollider.radius - Physics.defaultContactOffset, Vector3.down, out groundHitInfo, groundCheckDistance, groundLayers, QueryTriggerInteraction.Ignore);
-      if (groundHit)
-      {
-        if (Physics.Raycast(groundHitInfo.point + Vector3.up * 0.01f, Vector3.down, out RaycastHit hitInfo, 0.02f, groundLayers, QueryTriggerInteraction.Ignore))
-        {
-          float sphereSlopeAngle = Vector3.Angle(groundHitInfo.normal, Vector3.up);
-          float raycastSlopeAngle = Vector3.Angle(hitInfo.normal, Vector3.up);
-          if (raycastSlopeAngle < sphereSlopeAngle)
-            groundHitInfo = hitInfo;
-        }
-
-        isGrounded = true;
-        SetGroundedProperties();
-      }
-    }
-
-    void SnapToGround()
-    {
-      if (isGrounded)
-        return;
-
-      if (isJumping)
-        return;
-
-      if (stepsSinceLastGrounded > fallTimestepBuffer)
-        return;
-
-      if (!Physics.Raycast(Utils.GroundCastOrigin(transform.position, capsuleCollider.radius), Vector3.down, out groundHitInfo, snapToGroundProbingDistance, groundLayers, QueryTriggerInteraction.Ignore))
-        return;
-
-      isGrounded = true;
-      rigidBody.velocity = Utils.SnapToGroundVelocity(rigidBody.velocity, groundHitInfo.normal);
-      SetGroundedProperties();
-    }
-
-    void SetGroundedProperties()
-    {
-      groundContactNormal = groundHitInfo.normal;
-      stepsSinceLastGrounded = 0;
-      slopeAngle = Vector3.Angle(groundContactNormal, Vector3.up);
-      isStable = slopeAngle < maxSlopeAngle + 1;
     }
 
     void GravityAdjuster()
