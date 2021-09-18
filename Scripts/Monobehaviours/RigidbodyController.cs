@@ -27,6 +27,7 @@ namespace Fralle.FpsController
     [FoldoutGroup("Status")] [ReadOnly] public float modifiedJumpHeight;
     [FoldoutGroup("Status")] [ReadOnly] public Vector3 groundContactNormal;
     [FoldoutGroup("Status")] [ReadOnly] public float slopeAngle;
+    [FoldoutGroup("Status")] [ReadOnly] public float eyeHeight;
     [FoldoutGroup("Status")] [ReadOnly] public bool isLocked;
     [FoldoutGroup("Status")] [ReadOnly] public bool isGrounded;
     [FoldoutGroup("Status")] [ReadOnly] public bool isStable;
@@ -54,10 +55,10 @@ namespace Fralle.FpsController
     [FoldoutGroup("Jumping")] public float jumpHeight = 2f;
     [FoldoutGroup("Jumping")] public int jumpTimestepCooldown = 3;
 
-    [FoldoutGroup("Crouching")] public Vector3 standOffset;
-    [FoldoutGroup("Crouching")] public Vector3 crouchOffset;
-    [FoldoutGroup("Crouching")] public float crouchTime = 0.2f;
-    [FoldoutGroup("Crouching")] public float extraJumpBoost = 0.25f;
+    [FoldoutGroup("Crouching")] public float eyeHeightOffset = -0.3f;
+    [FoldoutGroup("Crouching")] public float standingHeight = 2f;
+    [FoldoutGroup("Crouching")] public float crouchHeight = 1f;
+    [FoldoutGroup("Crouching")] public float cameraSmoothTime = 0.1f;
 
     protected Animator Animator;
     protected Transform Model;
@@ -74,7 +75,6 @@ namespace Fralle.FpsController
     Vector2 refVelocity;
     Vector3 edgeCompensationNormal;
     bool queueJump;
-    bool extraCrouchBoost;
     bool performEdgeCompensation;
 
     bool PerformSlopeSlideCompensation => isGrounded && isStable && slopeAngle > 0;
@@ -91,7 +91,7 @@ namespace Fralle.FpsController
 
       playerCamera = FindObjectOfType<PlayerCamera>();
       playerCamera.controller = this;
-      playerCamera.SetOffset(standOffset, 0f);
+      playerCamera.SetOffset(Vector3.up * (standingHeight + eyeHeightOffset), 0f);
       cameraRig = playerCamera.transform;
       camera = cameraRig.GetComponentInChildren<Camera>();
       rotationTransformer = cameraRig.GetComponent<LookRotationTransformer>();
@@ -164,7 +164,6 @@ namespace Fralle.FpsController
         return;
 
       isJumping = false;
-      extraCrouchBoost = false;
     }
 
     void GroundCheck()
@@ -230,27 +229,23 @@ namespace Fralle.FpsController
     void StartCrouch()
     {
       isCrouching = true;
-      Utils.SetCapsuleDimensions(capsuleCollider, 0.5f, 1f);
+      Utils.SetCapsuleDimensions(capsuleCollider, crouchHeight);
+      if (!isGrounded)
+        transform.position += Vector3.up * 0.5f;
+      playerCamera.SetOffset(Vector3.up * crouchHeight, isGrounded ? cameraSmoothTime : 0f);
       Model.localScale = new Vector3(1f, 0.5f, 1f);
-      playerCamera.SetOffset(crouchOffset, crouchTime);
-
-      if (extraCrouchBoost)
-      {
-        rigidBody.AddForce(Utils.AddJumpForce(extraJumpBoost, gravityModifier), ForceMode.VelocityChange);
-        extraCrouchBoost = false;
-      }
 
       OnCrouch(true);
     }
 
     void EndCrouch()
     {
-      if (Utils.RoofCheck(transform.position, 2f, capsuleCollider.radius, groundLayers))
+      if (Utils.RoofCheck(transform.position, standingHeight, capsuleCollider.radius, groundLayers))
         return;
 
-      Utils.SetCapsuleDimensions(capsuleCollider, 0.5f, 2f);
+      Utils.SetCapsuleDimensions(capsuleCollider, standingHeight);
       Model.localScale = Vector3.one;
-      playerCamera.SetOffset(standOffset, crouchTime);
+      playerCamera.SetOffset(Vector3.up * (standingHeight + eyeHeightOffset), cameraSmoothTime);
       isCrouching = false;
       OnCrouch(false);
     }
@@ -281,7 +276,6 @@ namespace Fralle.FpsController
       queueJump = false;
       isJumping = true;
       isGrounded = false;
-      extraCrouchBoost = true;
 
       rigidBody.AddForce(Vector3.up * -rigidBody.velocity.y, ForceMode.VelocityChange);
       rigidBody.AddForce(Utils.AddJumpForce(modifiedJumpHeight, gravityModifier), ForceMode.VelocityChange);

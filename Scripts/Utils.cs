@@ -5,12 +5,10 @@ namespace Fralle.FpsController
 {
   public static class Utils
   {
-    public static void SetCapsuleDimensions(CapsuleCollider capsuleCollider, float radius, float height)
+    public static void SetCapsuleDimensions(CapsuleCollider capsuleCollider, float height)
     {
-      height = Mathf.Clamp(height, radius * 2f, height);
       capsuleCollider.height = height;
       capsuleCollider.center = new Vector3(0f, height * 0.5f, 0f);
-      capsuleCollider.radius = radius;
     }
 
     public static bool RoofCheck(Vector3 position, float heightOffset, float radius, int layerMask)
