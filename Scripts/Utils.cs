@@ -18,10 +18,7 @@ namespace Fralle.FpsController
 
     public static Vector3 ProjectOnContactPlane(Vector3 velocity, Vector3 normal) => velocity - normal * Vector3.Dot(velocity, normal);
 
-    public static Vector3 ClampedGravity(Vector3 velocity, float maxFallSpeed, float gravityModifier)
-    {
-      return velocity.y < -maxFallSpeed ? velocity.With(y: -maxFallSpeed) : velocity + Physics.gravity * (gravityModifier - 1) * Time.fixedDeltaTime;
-    }
+    public static Vector3 ClampedFallSpeed(Vector3 velocity, float maxFallSpeed) => velocity.y < -maxFallSpeed ? velocity.With(y: -maxFallSpeed) : velocity;
 
     public static Vector3 SnapToGroundVelocity(Vector3 velocity, Vector3 normal)
     {
@@ -35,7 +32,7 @@ namespace Fralle.FpsController
       return slopeDirection * clampedDot * velocity.magnitude;
     }
 
-    public static Vector3 AddJumpForce(float power, float gravityModifier) => Vector3.up * Mathf.Sqrt(-2f * Physics.gravity.y * gravityModifier * power);
+    public static Vector3 AddJumpForce(float power) => Vector3.up * Mathf.Sqrt(-2f * Physics.gravity.y * power);
 
     public static Vector3 GroundCastOrigin(Vector3 position, float radius) => position + Vector3.up * (radius + Physics.defaultContactOffset);
 

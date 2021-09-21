@@ -49,7 +49,6 @@ namespace Fralle.FpsController
     [FoldoutGroup("Ground Control")] public float groundCheckDistance = 0.1f;
     [FoldoutGroup("Ground Control")] public float snapToGroundProbingDistance = 1;
     [FoldoutGroup("Ground Control")] public int fallTimestepBuffer = 3;
-    [FoldoutGroup("Ground Control")] public float gravityModifier = 2f;
     [FoldoutGroup("Ground Control")] public float maxFallSpeed = 30f;
 
     [FoldoutGroup("Jumping")] public float jumpHeight = 2f;
@@ -131,6 +130,7 @@ namespace Fralle.FpsController
       // Actions
       PerformCrouch();
       PerformJump();
+      GroundedChange();
       PerformMovement();
 
       GravityAdjuster();
@@ -210,6 +210,12 @@ namespace Fralle.FpsController
       SetGroundedProperties();
     }
 
+    void GroundedChange()
+    {
+      if (previouslyGrounded && !isGrounded)
+        LeaveGrounded();
+    }
+
     void SetGroundedProperties()
     {
       groundContactNormal = groundHitInfo.normal;
@@ -277,9 +283,16 @@ namespace Fralle.FpsController
       isJumping = true;
       isGrounded = false;
 
-      rigidBody.AddForce(Vector3.up * -rigidBody.velocity.y, ForceMode.VelocityChange);
-      rigidBody.AddForce(Utils.AddJumpForce(modifiedJumpHeight, gravityModifier), ForceMode.VelocityChange);
 
+      if (rigidBody.velocity.y < 0)
+        rigidBody.AddForce(Vector3.up * -rigidBody.velocity.y, ForceMode.VelocityChange);
+      rigidBody.AddForce(Utils.AddJumpForce(modifiedJumpHeight), ForceMode.VelocityChange);
+    }
+
+    void LeaveGrounded()
+    {
+      if (groundHitInfo.collider && groundHitInfo.collider.TryGetComponent(out Rigidbody rb))
+        rb.AddForce(Vector3.down * rigidBody.mass);
       OnGroundLeave();
     }
 
@@ -311,7 +324,7 @@ namespace Fralle.FpsController
     void GravityAdjuster()
     {
       if (!isGrounded)
-        rigidBody.velocity = Utils.ClampedGravity(rigidBody.velocity, maxFallSpeed, gravityModifier);
+        rigidBody.velocity = Utils.ClampedFallSpeed(rigidBody.velocity, maxFallSpeed);
     }
 
     void CameraLook()
