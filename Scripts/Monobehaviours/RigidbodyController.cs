@@ -60,9 +60,9 @@ namespace Fralle.FpsController
     [FoldoutGroup("Crouching")] public float cameraSmoothTime = 0.1f;
 
     protected Animator Animator;
-    protected Transform Model;
     protected int AnimIsMoving;
     protected int AnimIsJumping;
+    protected int AnimIsCrouching;
     protected int AnimHorizontal;
     protected int AnimVertical;
     protected bool JumpButton;
@@ -86,7 +86,6 @@ namespace Fralle.FpsController
       rigidBody = GetComponent<Rigidbody>();
       capsuleCollider = GetComponent<CapsuleCollider>();
       Animator = GetComponentInChildren<Animator>();
-      Model = transform.Find("Model").transform;
 
       playerCamera = FindObjectOfType<PlayerCamera>();
       playerCamera.controller = this;
@@ -97,6 +96,7 @@ namespace Fralle.FpsController
 
       AnimIsMoving = Animator.StringToHash("IsMoving");
       AnimIsJumping = Animator.StringToHash("IsJumping");
+      AnimIsCrouching = Animator.StringToHash("IsCrouching");
       AnimHorizontal = Animator.StringToHash("Horizontal");
       AnimVertical = Animator.StringToHash("Vertical");
 
@@ -150,6 +150,7 @@ namespace Fralle.FpsController
       bool animateFalling = stepsSinceLastGrounded > fallTimestepBuffer;
       Animator.SetBool(AnimIsJumping, animateFalling);
       Animator.SetBool(AnimIsMoving, isMoving);
+      Animator.SetBool(AnimIsCrouching, isCrouching);
     }
 
     void ResetFlags()
@@ -239,7 +240,6 @@ namespace Fralle.FpsController
       if (!isGrounded)
         transform.position += Vector3.up * 0.5f;
       playerCamera.SetOffset(Vector3.up * crouchHeight, isGrounded ? cameraSmoothTime : 0f);
-      Model.localScale = new Vector3(1f, 0.5f, 1f);
 
       OnCrouch(true);
     }
@@ -250,7 +250,6 @@ namespace Fralle.FpsController
         return;
 
       Utils.SetCapsuleDimensions(capsuleCollider, standingHeight);
-      Model.localScale = Vector3.one;
       playerCamera.SetOffset(Vector3.up * (standingHeight + eyeHeightOffset), cameraSmoothTime);
       isCrouching = false;
       OnCrouch(false);
