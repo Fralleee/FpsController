@@ -283,8 +283,7 @@ namespace Fralle.FpsController
       isGrounded = false;
 
 
-      if (rigidBody.velocity.y < 0)
-        rigidBody.AddForce(Vector3.up * -rigidBody.velocity.y, ForceMode.VelocityChange);
+      rigidBody.AddForce(Vector3.up * -rigidBody.velocity.y, ForceMode.VelocityChange);
       rigidBody.AddForce(Utils.AddJumpForce(modifiedJumpHeight), ForceMode.VelocityChange);
     }
 
