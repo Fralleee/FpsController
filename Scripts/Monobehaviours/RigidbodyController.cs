@@ -8,7 +8,7 @@ namespace Fralle.FpsController
   public partial class RigidbodyController : MonoBehaviour
   {
     public event Action OnGroundLeave = delegate { };
-    public event Action<bool> OnCrouch = delegate { };
+    public event Action<bool> OnCrouched = delegate { };
 
     [HideInInspector] public new Camera camera;
     [HideInInspector] public PlayerCamera playerCamera;
@@ -241,7 +241,7 @@ namespace Fralle.FpsController
         transform.position += Vector3.up * 0.5f;
       playerCamera.SetOffset(Vector3.up * crouchHeight, isGrounded ? cameraSmoothTime : 0f);
 
-      OnCrouch(true);
+      OnCrouched(true);
     }
 
     void EndCrouch()
@@ -252,7 +252,7 @@ namespace Fralle.FpsController
       Utils.SetCapsuleDimensions(capsuleCollider, standingHeight);
       playerCamera.SetOffset(Vector3.up * (standingHeight + eyeHeightOffset), cameraSmoothTime);
       isCrouching = false;
-      OnCrouch(false);
+      OnCrouched(false);
     }
 
     void JumpInput()
