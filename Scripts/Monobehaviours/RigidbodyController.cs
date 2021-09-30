@@ -11,13 +11,14 @@ namespace Fralle.FpsController
     public event Action<bool> OnCrouched = delegate { };
 
     [HideInInspector] public new Camera camera;
-    [HideInInspector] public PlayerCamera playerCamera;
+    [HideInInspector] public CameraController cameraController;
     [HideInInspector] public Transform cameraRig;
     [HideInInspector] public Rigidbody rigidBody;
     [HideInInspector] public CapsuleCollider capsuleCollider;
     [HideInInspector] public Vector3 desiredVelocity;
     [HideInInspector] public Vector2 Movement { get; protected set; }
     [HideInInspector] public Vector2 MouseLook { get; protected set; }
+    [HideInInspector] public Quaternion Orientation { get; protected set; }
     [HideInInspector] public float movementSpeedProduct;
     [HideInInspector] public int stepsSinceLastGrounded;
     [HideInInspector] public int stepsSinceLastJump;
@@ -68,7 +69,7 @@ namespace Fralle.FpsController
     protected bool JumpButton;
     protected bool CrouchButton;
 
-    LookRotationTransformer rotationTransformer;
+    ICameraRotator cameraRotator;
     RaycastHit groundHitInfo;
     Vector2 cameraRotation;
     Vector2 refVelocity;
@@ -87,12 +88,12 @@ namespace Fralle.FpsController
       capsuleCollider = GetComponent<CapsuleCollider>();
       Animator = GetComponentInChildren<Animator>();
 
-      playerCamera = FindObjectOfType<PlayerCamera>();
-      playerCamera.controller = this;
-      playerCamera.SetOffset(Vector3.up * (standingHeight + eyeHeightOffset), 0f);
-      cameraRig = playerCamera.transform;
+      cameraController = FindObjectOfType<CameraController>();
+      cameraController.controller = this;
+      cameraController.SetOffset(Vector3.up * (standingHeight + eyeHeightOffset), 0f);
+      cameraRig = cameraController.transform;
       camera = cameraRig.GetComponentInChildren<Camera>();
-      rotationTransformer = cameraRig.GetComponent<LookRotationTransformer>();
+      cameraRotator = cameraRig.GetComponent<ICameraRotator>();
 
       AnimIsMoving = Animator.StringToHash("IsMoving");
       AnimIsJumping = Animator.StringToHash("IsJumping");
@@ -125,7 +126,7 @@ namespace Fralle.FpsController
       SnapToGround();
       EdgeAndSlopeHandling();
 
-      desiredVelocity = Utils.GetDesiredVelocity(cameraRig, Movement);
+      desiredVelocity = Utils.GetDesiredVelocity(Orientation, Movement);
 
       // Actions
       PerformCrouch();
@@ -228,9 +229,9 @@ namespace Fralle.FpsController
     void EdgeAndSlopeHandling()
     {
       if (performEdgeCompensation)
-        rigidBody.AddForce(Utils.ProjectOnContactPlane(-Physics.gravity, edgeCompensationNormal));
+        rigidBody.AddForce(Utils.ProjectOnContactPlane(-Physics.gravity, edgeCompensationNormal), ForceMode.Acceleration);
       else if (PerformSlopeSlideCompensation)
-        rigidBody.AddForce(Utils.ProjectOnContactPlane(-Physics.gravity, groundContactNormal));
+        rigidBody.AddForce(Utils.ProjectOnContactPlane(-Physics.gravity, groundContactNormal), ForceMode.Acceleration);
     }
 
     void StartCrouch()
@@ -239,7 +240,7 @@ namespace Fralle.FpsController
       Utils.SetCapsuleDimensions(capsuleCollider, crouchHeight);
       if (!isGrounded)
         transform.position += Vector3.up * 0.5f;
-      playerCamera.SetOffset(Vector3.up * crouchHeight, isGrounded ? cameraSmoothTime : 0f);
+      cameraController.SetOffset(Vector3.up * crouchHeight, isGrounded ? cameraSmoothTime : 0f);
 
       OnCrouched(true);
     }
@@ -250,7 +251,7 @@ namespace Fralle.FpsController
         return;
 
       Utils.SetCapsuleDimensions(capsuleCollider, standingHeight);
-      playerCamera.SetOffset(Vector3.up * (standingHeight + eyeHeightOffset), cameraSmoothTime);
+      cameraController.SetOffset(Vector3.up * (standingHeight + eyeHeightOffset), cameraSmoothTime);
       isCrouching = false;
       OnCrouched(false);
     }
@@ -329,9 +330,25 @@ namespace Fralle.FpsController
     {
       cameraRotation = Vector2.SmoothDamp(cameraRotation, new Vector2(cameraRotation.x + MouseLook.x * mouseSensitivity, Mathf.Clamp(cameraRotation.y + MouseLook.y * mouseSensitivity, -clampY, clampY)), ref refVelocity, smoothTime);
 
-      Vector3 rot = cameraRig.transform.rotation.eulerAngles;
-      cameraRig.transform.localRotation = Quaternion.Euler(rot.x, cameraRotation.x, rot.z);
-      rotationTransformer.ApplyLookRotation(Quaternion.Euler(cameraRotation.y, cameraRotation.x, 0));
+      //Vector3 rot = cameraRig.rotation.eulerAngles;
+      //cameraRig.localRotation = Quaternion.Euler(rot.x, cameraRotation.x, rot.z);
+      cameraRotator.ApplyLookRotation(Quaternion.Euler(cameraRotation.y, cameraRotation.x, 0));
+
+
+      // Camerarotation.X => Horizontal rotation
+
+      //var rot = Orientation.transform.rotation.eulerAngles;
+      //currentRotationX = Mathf.SmoothDamp(currentRotationX, mouseCoords.x + affectRotation.x, ref mouseLookDampX, smoothTime);
+      //orientation.transform.localRotation = Quaternion.Euler(rot.x, currentRotationX, rot.z);
+
+
+      //Debug.Log(Mathf.Round(cameraRotation.x));
+      //var rot = Orientation.eulerAngles;
+      //Orientation = Quaternion.AngleAxis(cameraRotation.x, Vector3.up);
+      Orientation = Quaternion.Euler(0f, cameraRotation.x, 0f);
+
+      //transform.rotation = Quaternion.Euler(0f, cameraRotation.x, 0f);
+
     }
 
     void OnValidate()

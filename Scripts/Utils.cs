@@ -36,11 +36,9 @@ namespace Fralle.FpsController
 
     public static Vector3 GroundCastOrigin(Vector3 position, float radius) => position + Vector3.up * (radius + Physics.defaultContactOffset);
 
-    public static Vector3 GetDesiredVelocity(Transform orientation, Vector2 input)
+    public static Vector3 GetDesiredVelocity(Quaternion orientation, Vector2 input)
     {
-      Vector3 right = new Vector3(orientation.right.x, 0, orientation.right.z).normalized;
-      Vector3 forward = Quaternion.Euler(0, -90, 0) * right;
-      return right * input.x + forward * input.y;
+      return orientation * input.ToVector3();
     }
   }
 }
