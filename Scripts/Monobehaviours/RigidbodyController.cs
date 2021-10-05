@@ -55,7 +55,7 @@ namespace Fralle.FpsController
     [FoldoutGroup("Jumping")] public float jumpHeight = 2f;
     [FoldoutGroup("Jumping")] public int jumpTimestepCooldown = 3;
 
-    [FoldoutGroup("Crouching")] public float eyeHeightOffset = -0.3f;
+    [FoldoutGroup("Crouching")] public float eyeHeightOffset = -0.5f;
     [FoldoutGroup("Crouching")] public float standingHeight = 2f;
     [FoldoutGroup("Crouching")] public float crouchHeight = 1f;
     [FoldoutGroup("Crouching")] public float cameraSmoothTime = 0.1f;
