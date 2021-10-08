@@ -328,26 +328,16 @@ namespace Fralle.FpsController
 
     void CameraLook()
     {
-      cameraRotation = Vector2.SmoothDamp(cameraRotation, new Vector2(cameraRotation.x + MouseLook.x * mouseSensitivity, Mathf.Clamp(cameraRotation.y + MouseLook.y * mouseSensitivity, -clampY, clampY)), ref refVelocity, smoothTime);
+      cameraRotation = Vector2.SmoothDamp(
+        cameraRotation,
+        new Vector2(cameraRotation.x + MouseLook.x * mouseSensitivity,
+        Mathf.Clamp(cameraRotation.y + MouseLook.y * mouseSensitivity, -clampY, clampY)),
+        ref refVelocity,
+        smoothTime
+      );
 
-      //Vector3 rot = cameraRig.rotation.eulerAngles;
-      //cameraRig.localRotation = Quaternion.Euler(rot.x, cameraRotation.x, rot.z);
       cameraRotator.ApplyLookRotation(Quaternion.Euler(cameraRotation.y, cameraRotation.x, 0));
-
-
-      // Camerarotation.X => Horizontal rotation
-
-      //var rot = Orientation.transform.rotation.eulerAngles;
-      //currentRotationX = Mathf.SmoothDamp(currentRotationX, mouseCoords.x + affectRotation.x, ref mouseLookDampX, smoothTime);
-      //orientation.transform.localRotation = Quaternion.Euler(rot.x, currentRotationX, rot.z);
-
-
-      //Debug.Log(Mathf.Round(cameraRotation.x));
-      //var rot = Orientation.eulerAngles;
-      //Orientation = Quaternion.AngleAxis(cameraRotation.x, Vector3.up);
       Orientation = Quaternion.Euler(0f, cameraRotation.x, 0f);
-
-      //transform.rotation = Quaternion.Euler(0f, cameraRotation.x, 0f);
 
     }
 
