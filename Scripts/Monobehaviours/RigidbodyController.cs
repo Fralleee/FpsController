@@ -1,6 +1,9 @@
 using Fralle.Core;
 using Sirenix.OdinInspector;
 using System;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using UnityEngine;
 
 namespace Fralle.FpsController
@@ -346,5 +349,16 @@ namespace Fralle.FpsController
       currentMaxMovementSpeed = maxMovementSpeed;
       modifiedJumpHeight = jumpHeight;
     }
+
+#if UNITY_EDITOR
+    void OnDrawGizmosSelected()
+    {
+      Handles.color = Color.black;
+      Handles.DrawWireDisc(transform.position, Vector3.up, .3f, 10f);
+      Handles.color = isGrounded ? Color.green : Color.red;
+      Handles.DrawWireDisc(transform.position, Vector3.up, .3f, 5f);
+    }
+#endif
   }
 }
+
