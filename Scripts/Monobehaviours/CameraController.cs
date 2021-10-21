@@ -5,7 +5,7 @@ namespace Fralle.FpsController
 {
   public class CameraController : MonoBehaviour, ICameraController
   {
-    public RigidbodyController controller { get; set; }
+    [HideInInspector] public RigidbodyController controller;
 
     protected Vector3 currentOffset;
 
