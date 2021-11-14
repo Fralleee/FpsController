@@ -122,7 +122,7 @@ namespace Fralle.FpsController
       AnimHorizontal = Animator.StringToHash("Horizontal");
       AnimVertical = Animator.StringToHash("Vertical");
 
-      OnValidate();      
+      OnValidate();
     }
 
     protected void Start()
