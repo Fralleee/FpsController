@@ -5,14 +5,16 @@ using System;
 using UnityEditor;
 #endif
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Fralle.FpsController
 {
-  public partial class RigidbodyController : MonoBehaviour
+  public class PlayerController : MonoBehaviour, MovementControls.IDefaultActions
   {
     public event Action OnGroundLeave = delegate { };
     public event Action<bool> OnCrouched = delegate { };
 
+    [HideInInspector] public MovementControls controls;
     [HideInInspector] public new Camera camera;
     [HideInInspector] public CameraController cameraController;
     [HideInInspector] public Transform cameraRig;
@@ -85,8 +87,24 @@ namespace Fralle.FpsController
     float GetAcceleration => isGrounded ? groundAcceleration : airAcceleration;
     float GetMaxSpeed => currentMaxMovementSpeed * (isGrounded && isCrouching ? crouchModifier : 1f);
 
+    public static void ConfigureCursor(bool doLock = true)
+    {
+      if (doLock)
+      {
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
+      }
+      else
+      {
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.Confined;
+      }
+    }
+
     protected virtual void Awake()
     {
+      ConfigureCursor();
+
       rigidBody = GetComponent<Rigidbody>();
       capsuleCollider = GetComponent<CapsuleCollider>();
       Animator = GetComponentInChildren<Animator>();
@@ -104,7 +122,14 @@ namespace Fralle.FpsController
       AnimHorizontal = Animator.StringToHash("Horizontal");
       AnimVertical = Animator.StringToHash("Vertical");
 
-      OnValidate();
+      OnValidate();      
+    }
+
+    protected void Start()
+    {
+      controls = new MovementControls();
+      controls.Default.Enable();
+      controls.Default.SetCallbacks(this);
     }
 
     protected virtual void Update()
@@ -348,6 +373,32 @@ namespace Fralle.FpsController
     {
       currentMaxMovementSpeed = maxMovementSpeed;
       modifiedJumpHeight = jumpHeight;
+    }
+
+    public void OnMovement(InputAction.CallbackContext context)
+    {
+      Movement = context.ReadValue<Vector2>();
+
+      if (!Animator)
+        return;
+
+      Animator.SetFloat(AnimHorizontal, Movement.x);
+      Animator.SetFloat(AnimVertical, Movement.y);
+    }
+
+    public void OnLook(InputAction.CallbackContext context)
+    {
+      MouseLook = context.ReadValue<Vector2>();
+    }
+
+    public void OnJump(InputAction.CallbackContext context)
+    {
+      JumpButton = context.ReadValueAsButton();
+    }
+
+    public void OnCrouch(InputAction.CallbackContext context)
+    {
+      CrouchButton = context.ReadValueAsButton();
     }
 
 #if UNITY_EDITOR
